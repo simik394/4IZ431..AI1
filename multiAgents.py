@@ -280,9 +280,9 @@ class MinimaxAgent(MultiAgentSearchAgent):
         "*** YOUR CODE HERE ***"
         # util.raiseNotDefined()
         
-        # --- POMOCNÁ FUNKCE: REKURZIVNÍ MINIMAX ---
         def minimax(agentIndex, depth, state):
             # 1. Terminální stavy (Base Cases)
+            # ===================================
             # Pokud hra skončila (výhra/prohra) nebo jsme dosáhli max hloubky
             if state.isWin() or state.isLose() or depth == self.depth:
                 return self.evaluationFunction(state)
@@ -322,7 +322,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
                         min_score = score
                 return min_score
 
-        # ---- HLAVNÍ LOGIKA (ROOT CALL) ----
+        # ---- ROOT CALL ----
         # ===================================
         # V kořeni (Root) musíme vrátit AKCI, ne jen skóre.
         # minimax() ale vrací jen skóre, proto je první vrstva spracována "manuálně".
@@ -355,7 +355,85 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+       
+        # --- REKURZIVNÍ FUNKCE ---
+        def alpha_beta_search(agentIndex, depth, state, alpha, beta):
+            # 1. Terminální stavy (Stejné jako Q2)
+            # ===================================
+            if state.isWin() or state.isLose() or depth == self.depth:
+                return self.evaluationFunction(state)
+
+            # Příprava indexů (Stejné jako Q2)
+            numAgents = state.getNumAgents()
+            nextAgent = (agentIndex + 1) % numAgents
+            nextDepth = depth + 1 if nextAgent == 0 else depth
+            
+            legalMoves = state.getLegalActions(agentIndex)
+
+            # 2. Logika Agenta
+            # ===================================
+            if agentIndex == 0:
+                # --- MAXIMIZER (Pacman) ---
+                v = -float('inf')
+                for action in legalMoves:
+                    successor = state.generateSuccessor(agentIndex, action)
+                    v = max(v, alpha_beta_search(nextAgent, nextDepth, successor, alpha, beta))
+                    
+                    # PRUNING (Prořezání)
+                    if v > beta:
+                        return v # Duch nám nedovolí víc než beta, končíme
+                    
+                    # Update Alpha (Pacman našel novou nejlepší spodní hranici)
+                    alpha = max(alpha, v)
+                return v
+            
+            else:
+                # --- MINIMIZER (Duchové) ---
+                v = float('inf')
+                for action in legalMoves:
+                    successor = state.generateSuccessor(agentIndex, action)
+                    # Předáváme alpha a beta dál
+                    v = min(v, alpha_beta_search(nextAgent, nextDepth, successor, alpha, beta))
+                    
+                    # PRUNING (Prořezání)
+                    if v < alpha:
+                        return v # Pacman nevybere nic horšího než alpha, končíme
+                    
+                    # Update Beta (Duch našel novou nejlepší horní hranici)
+                    beta = min(beta, v)
+                return v
+
+        # --- ROOT CALL ---
+        # ===================================
+        # Tady musíme: 
+        #  - vybrat AKCI, ne jen vrátit hodnotu
+        #  - aktualizovat alpha/beta i v této smyčce!
+        
+        best_score = -float('inf')
+        best_action = None
+        
+        # Inicializace mezí pro kořen
+        alpha = -float('inf')
+        beta = float('inf')
+        
+        legalMoves = gameState.getLegalActions(0)
+        
+        for action in legalMoves:
+            successor = gameState.generateSuccessor(0, action)
+            # Voláme rekurzi pro prvního ducha
+            score = alpha_beta_search(1, 0, successor, alpha, beta)
+            
+            if score > best_score:
+                best_score = score
+                best_action = action
+            
+            # Update Alpha v kořeni!
+            # (Root je v podstatě MAX uzel, takže aktualizujeme alpha)
+            if score > beta: 
+                return best_action
+            alpha = max(alpha, score)
+            
+        return best_action
 ###  QUESTION 4  ###
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
@@ -370,7 +448,67 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        
+        
+        def expectimax(agentIndex, depth, state):
+            # 1. Terminální stavy
+            # ===================================
+            if state.isWin() or state.isLose() or depth == self.depth:
+                return self.evaluationFunction(state)
+
+            # Příprava indexů
+            numAgents = state.getNumAgents()
+            nextAgent = (agentIndex + 1) % numAgents
+            nextDepth = depth + 1 if nextAgent == 0 else depth
+            
+            legalMoves = state.getLegalActions(agentIndex)
+            
+            # Pokud nemáme žádné tahy (a není to Win/Lose),legálně nemůžeme nic -> return eval
+            if not legalMoves:
+                return self.evaluationFunction(state)
+
+            # 2. Logika Agenta
+            # ===================================
+            if agentIndex == 0:
+                # --- MAXIMIZER (Pacman) ---
+                # Pacman hraje pořád stejně - chce to nejlepší pro sebe
+                max_score = -float('inf')
+                for action in legalMoves:
+                    successor = state.generateSuccessor(agentIndex, action)
+                    score = expectimax(nextAgent, nextDepth, successor)
+                    if score > max_score:
+                        max_score = score
+                return max_score
+            
+            else:
+                # --- EXPECTATION (Duchové) ---
+                # Tady je změna! Duchové nehrají optimálně, ale náhodně.
+                # Počítáme PRŮMĚR všech možných výsledků.
+                total_score = 0.0
+                for action in legalMoves:
+                    successor = state.generateSuccessor(agentIndex, action)
+                    score = expectimax(nextAgent, nextDepth, successor)
+                    total_score += score
+                
+                # Předpokládáme Uniform Distribution (všechny tahy stejně pravděpodobné)
+                average_score = total_score / len(legalMoves)
+                return average_score
+
+        # --- ROOT CALL ---
+        # ===================================
+        best_score = -float('inf')
+        best_action = None
+        
+        legalMoves = gameState.getLegalActions(0)
+        for action in legalMoves:
+            successor = gameState.generateSuccessor(0, action)
+            score = expectimax(1, 0, successor)
+            
+            if score > best_score:
+                best_score = score
+                best_action = action
+        
+        return best_action
 ###  QUESTION 5  ###
 def betterEvaluationFunction(currentGameState: GameState):
     """
@@ -380,7 +518,6 @@ def betterEvaluationFunction(currentGameState: GameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
 
-# Abbreviation
+      # Abbreviation
 better = betterEvaluationFunction
