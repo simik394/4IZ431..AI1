@@ -1270,14 +1270,15 @@ Parametry:
 - save_trees: ukládat prohledávací stromy do souborů
 """
 function run_assignment_simulation(; search_depth::Int=6, num_turns::Int=2, save_trees::Bool=true,
-    config::HeuristicConfig=DEFAULT_CONFIG, pruning::PruningStrategy=PRUNE_LOSS_OF_PIECE)
+    config::HeuristicConfig=DEFAULT_CONFIG, pruning::PruningStrategy=PRUNE_LOSS_OF_PIECE,
+    output_base_dir::String=joinpath("out", "simulation_outputs"))
     global tree_enabled, current_output_dir
     tree_enabled = save_trees
 
     # Vytvoř output adresář
     output_dir = ""
     if save_trees
-        output_dir = create_output_directory()
+        output_dir = create_output_directory(output_base_dir)
         println("\n📁 Výstupy budou uloženy do: $output_dir")
     end
 

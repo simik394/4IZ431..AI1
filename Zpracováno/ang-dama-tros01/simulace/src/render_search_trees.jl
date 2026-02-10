@@ -217,7 +217,9 @@ function generate_enhanced_dot(nodes::Vector{TreeNode}, title::String)
         else
             alpha_label = fmt_num(node.alpha)
             beta_label = fmt_num(node.beta)
-            label = "{ $(move_label) ($(node.role)) | s=$(score_label) | α=$(alpha_label) β=$(beta_label) }"
+            # Clarified label: Separate Move from Node Role (State)
+            # e.g. "{ 10-6 | MIN | s=... }"
+            label = "{ $(move_label) | $(node.role) | s=$(score_label) | α=$(alpha_label) β=$(beta_label) }"
         end
 
         println(io, "    n$(node.id) [label=\"$label\", style=filled, fillcolor=$fillcolor, fontcolor=$fontcolor];")

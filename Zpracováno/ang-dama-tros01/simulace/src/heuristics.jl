@@ -36,7 +36,8 @@ struct HeuristicConfig
     use_retreat::Bool         # Penalta za zbytečný ústup
     use_net::Bool             # Diagonální síť (net formation)
     use_attack::Bool          # Přímé sousedství
-    use_ctrl::Bool            # Kontrola rohu
+    use_ctrl::Bool            # Kontrola dvojitého rohu (double corner control)
+    debug::Bool               # Debugovací výpis
 
     # Konstruktor s defaultními hodnotami (vše zapnuto)
     HeuristicConfig(;
@@ -47,9 +48,10 @@ struct HeuristicConfig
         use_retreat=true,
         use_net=true,
         use_attack=true,
-        use_ctrl=true
+        use_ctrl=true,
+        debug=false
     ) = new(use_material, use_cornering, use_coordination, use_mobility,
-        use_retreat, use_net, use_attack, use_ctrl)
+        use_retreat, use_net, use_attack, use_ctrl, debug)
 end
 
 # Defaultní konfigurace (vše zapnuto)
@@ -408,14 +410,20 @@ function optimal_endgame_heuristic(board::Matrix{Int})
             score += approach_bonus
 
             wp_notation = position_to_notation(wp[1], wp[2])
-            if wp_notation == 6
+            if wp_notation == 1
+                score += 200.0  # Cíl! (Perfect Corner)
+            elseif wp_notation == 5
+                score += 500.0  # Klíčové pole před rohem (Step 5->1) - Aggressive Boost
+            elseif wp_notation == 6
                 score += 150.0
             elseif wp_notation == 2
-                score += 120.0
-            elseif wp_notation == 9 || wp_notation == 10
+                score += 100.0  # Blízko rohu (Step 6->2) - Reduced to disfavor 10-7
+            elseif wp_notation == 9
+                score += 150.0  # Step 14->9
+            elseif wp_notation == 10
                 score += 100.0
             elseif wp_notation == 14
-                score += 50.0
+                score += 100.0  # Step 10->14 (Waiting move, preserve score)
             end
         end
         #| endregion: optimal_corner_control
@@ -569,6 +577,7 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
     # Potřebujeme pozice VŽDY. Skóre materiálu jen když config.use_material.
 
     # --- A. MATERIÁL & POZICE ---
+    #| region: perfect_material
     mat_score = 0.0
     const_KING = 100.0
 
@@ -603,6 +612,7 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
     end
 
     score += mat_score
+    #| endregion: perfect_material
 
     # Vítězství / prohra
     if red_kings == 0
@@ -668,8 +678,8 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
             if config.use_coordination
                 # Optimální koordinace: vzdálenost 2-4
                 #| region: perfect_coordination
-                if king_distance >= 2 && king_distance <= 4
-                    score += 300.0  # Dobrá koordinace
+                if king_distance >= 2 && king_distance <= 6
+                    score += 300.0  # Dobrá koordinace (zvýšeno na 6 pro široké sítě)
                 elseif king_distance == 1
                     score += 100.0  # Příliš blízko - méně efektivní
                 elseif king_distance >= 5
@@ -680,6 +690,24 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
                 # Průměrná vzdálenost k červenému (menší = lepší sevření)
                 score += (6.0 - avg_dist) * 60.0  # Bonus za blízkost
                 #| endregion: perfect_coordination
+
+                # Bridge Penalty
+                # Detekce situace, kdy jsou dva bílí na diagonále s mezerou uprostřed
+                row_diff = abs(wp1[1] - wp2[1])
+                col_diff = abs(wp1[2] - wp2[2])
+
+                if row_diff == 2 && col_diff == 2
+                    mid_r = (wp1[1] + wp2[1]) ÷ 2
+                    mid_c = (wp1[2] + wp2[2]) ÷ 2
+
+                    # Pokud je červený na středu nebo vedle něj (step <= 1)
+                    # Chebyshev distance (step count)
+                    dist_to_mid = max(abs(red_row - mid_r), abs(red_col - mid_c))
+
+                    if dist_to_mid <= 1
+                        score -= 600.0  # Výrazná penalta za zranitelnou formaci
+                    end
+                end
             end
 
             # ==========================================================================
@@ -739,12 +767,11 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
                     # Vzdálenost operátora od rohu
                     op_dist_from_corner = abs(op_row - 1) + abs(op_col - 2)
 
-                    # SILNÝ bonus za operátora na hlavní diagonále pryč od rohu
+                    # Bonus za operátora na diagonále pryč od rohu
                     # Pole 18 = (5,4), pole 15 = (4,6), pole 22 = (6,5) atd.
-                    if op_row >= 4 && op_col >= 4  # Diagonála směrem dolů/doprava
-                        score += 1200.0  # KLÍČOVÝ bonus pro správnou formaci
-                    elseif op_row >= 3 && op_col >= 4  # Přijatelná pozice
-                        score += 600.0
+                    # Rozšířeno na row >= 3 (1200) aby nedocházelo k dropu při 15->11
+                    if op_row >= 3 && op_col >= 4
+                        score += 1200.0  # Konstantní bonus pro formaci
                     end
 
                     # SILNÁ penalta za operátora blízko rohu (crowding)
@@ -807,6 +834,7 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
 
         # ==========================================================================
         # BONUS ZA PŘÍMÉ SOUSEDSTVÍ (ÚTOK)
+        # TODO: předělat jednotně číslování principů
         # ==========================================================================
 
         if config.use_attack
@@ -838,8 +866,10 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
                 white_at_corner = any(wp -> wp[1] == 1 && wp[2] == 2, white_positions)
 
                 # Je některý W blízko rohu (distance <= 2)?
-                dist1 = abs(wp1[1] - 1) + abs(wp1[2] - 2)
-                dist2 = abs(wp2[1] - 1) + abs(wp2[2] - 2)
+                # POUŽITÍ CHEBYSHEV DISTANCE (max) místo Manhattan (sum)
+                # Důvod: Král se hýbe o 1 pole všemi směry. Manhattan (5->1) je 2, ale Chebyshev je 1.
+                dist1 = max(abs(wp1[1] - 1), abs(wp1[2] - 2))
+                dist2 = max(abs(wp2[1] - 1), abs(wp2[2] - 2))
                 white_near_corner = (min(dist1, dist2) <= 2)
 
                 if !white_near_corner
@@ -848,23 +878,44 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
                     # SILNÝ bonus aby dominoval nad jinými metrikami
                     closer_dist = min(dist1, dist2)
                     if closer_dist <= 3
-                        score += (5 - closer_dist) * 300.0  # Čím blíž, tím lépe (ZVÝŠENO!)
+                        score += (5 - closer_dist) * 600.0  # Čím blíž, tím lépe (ZVÝŠENO na 600 pro tie-break 14-9 vs 10-7)
                     end
                 else
                     # === JEDEN W BLÍZKO ROHU: druhý by měl být na diagonále ===
                     # Operátor (vzdálenější král) by měl být na pozici pro squeeze
                     farther_dist = max(dist1, dist2)
+                    if config.debug
+                        println("DEBUG CTRL: dist1=$dist1 dist2=$dist2 far=$farther_dist close=$(min(dist1, dist2))")
+                    end
+
+                    # FINE-TUNING: Odměna za to, že "kotva" je co nejblíž
+                    # Používáme stejný vzorec jako v 'if' větvi pro kontinuitu (žádný drop)
+                    closer_dist = min(dist1, dist2)
+                    if closer_dist <= 3
+                        score += (5 - closer_dist) * 600.0
+                    end
+
+                    if closer_dist <= 2
+                        score += 200.0 # Final Nudge to break 10-7 tie
+                    end
+
+                    if closer_dist <= 1
+                        score += 500.0 # Reward for Perfect Cornering (Sq 5)
+                    end
 
                     # Bonus za dobrý spread operátora
-                    if farther_dist >= 4
+                    # Přidáno >= 5 (700) pro preferenci širší sítě (tah 14-18)
+                    if farther_dist >= 5
+                        score += 700.0
+                    elseif farther_dist >= 4
                         score += 400.0  # Operátor správně vzdálený
                     elseif farther_dist >= 3
                         score += 200.0
                     end
 
                     # Penalta pokud OBA jsou příliš blízko rohu (crowding)
-                    if min(dist1, dist2) <= 2 && max(dist1, dist2) <= 3
-                        score -= 600.0  # Crowding!
+                    if min(dist1, dist2) <= 2 && max(dist1, dist2) <= 2
+                        score -= 600.0  # Crowding! (Relaxed condition from <=3 to <=2)
                     end
                 end
 
@@ -884,7 +935,7 @@ end
 # ------------------------------------------------------------------------------
 # REGISTR HEURISTIK - Pro snadný výběr
 # ------------------------------------------------------------------------------
-
+# TODO: clean out the others not ever used heuristics
 const HEURISTICS = Dict(
     "my_heuristic" => my_heuristic,
     "optimal_endgame" => optimal_endgame_heuristic,
