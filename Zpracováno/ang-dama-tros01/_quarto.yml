@@ -1,15 +1,44 @@
 project:
-  title: "AI1 Simulation Report"
-  output-dir: out/pdfs
+  type: book
+  output-dir: out
 
-metadata-files:
-  - /home/sim/.config/quarto/shared/quarto-base.yml
+execute:
+  freeze: auto
+
+
+
+book:
+  title: "Anglická dáma - Analýza koncovky"
+  author: "AI1 Projekt"
+  date: "2026-02-10"
+  chapters:
+    - index.qmd
+    - 1..dohrání/alphabeta-sim-tros01.qmd
+    - 2..simulace/src/myHer-val-func-docs.qmd
+    - 2..simulace/src/optimalHer-val-func-docs.qmd
+    - 2..simulace/src/perfectHer-val-func-docs.qmd
+    - 2..simulace/src/comparison-val-func-docs.qmd
+
+# metadata-files:
+#   - /home/sim/.config/quarto/shared/quarto-base.yml
+
+filters:
+  - include-code-files
 
 format:
   pdf:
-    output-file: "__atomic_candidate.pdf"
+    documentclass: report
+    papersize: a4
+    fontsize: 11pt
+    max-width: 100% # Ensure full width usage
+    geometry:
+      - margin=2.5cm
+    colorlinks: true
+    toc: true
+    toc-depth: 3
     number-sections: true
-    latex-max-runs: 3  # Prevents table layout oscillation from causing 10+ runs
+    highlight-style: github
+    latex-max-runs: 3
     include-in-header:
       - text: |
           \usepackage{wrapfig}
@@ -18,14 +47,4 @@ format:
           \setsansfont{Linux Biolinum O}
           \setmonofont{Linux Libertine Mono O}
           \setmathfont{Latin Modern Math}
-
-# ============================================================
-# IMPORTANT: For Obsidian syntax support, use the wrapper:
-#
-#   qobs alphabeta-sim-tros01.qmd
-#
-# Or the full command:
-#   python3 ~/.config/quarto/shared/scripts/quarto-obsidian-render.py FILE.qmd --to pdf
-#
-# Direct `quarto render` won't transform ![[wikilinks]] or .canvas files
-# ============================================================
+      - title.tex

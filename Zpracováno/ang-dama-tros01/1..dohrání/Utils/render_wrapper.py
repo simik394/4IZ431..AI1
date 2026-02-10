@@ -37,8 +37,9 @@ def find_vault_root(start_dir: Path) -> Optional[Path]:
 
 
 def resolve_path(base_dir: Path, embed_path: str, staging_dir: Path = None) -> str:
-    """Resolve an Obsidian embed path to a RELATIVE path.
-    Returns path relative to staging_dir to work around LaTeX absolute path issues.
+    """Resolve an Obsidian embed path to an ABSOLUTE path.
+    Using absolute paths is safer for Quarto projects where the rendering 
+    context might change (e.g., individual file vs. project-wide book).
     """
     filename = Path(embed_path).name
     
@@ -49,22 +50,11 @@ def resolve_path(base_dir: Path, embed_path: str, staging_dir: Path = None) -> s
     # Check .quarto/frames/ first (for auto-exported Excalidraw frames)
     frames_path = base_dir / ".quarto" / "frames" / filename
     if frames_path.exists():
-        if staging_dir:
-            try:
-                return os.path.relpath(frames_path.absolute(), staging_dir.absolute())
-            except ValueError:
-                return str(frames_path.absolute())
         return str(frames_path.absolute())
     
     # Check local directory
     local_path = base_dir / filename
     if local_path.exists():
-        # Return relative path from staging dir to the file
-        if staging_dir:
-            try:
-                return os.path.relpath(local_path.absolute(), staging_dir.absolute())
-            except ValueError:
-                return str(local_path.absolute())
         return str(local_path.absolute())
     
     # Check vault attachments
@@ -73,21 +63,11 @@ def resolve_path(base_dir: Path, embed_path: str, staging_dir: Path = None) -> s
         for folder in ["attachments", "Attachments", "assets", "Assets", "."]:
             attach_path = vault_root / folder / filename
             if attach_path.exists():
-                if staging_dir:
-                    try:
-                        return os.path.relpath(attach_path.absolute(), staging_dir.absolute())
-                    except ValueError:
-                        return str(attach_path.absolute())
                 return str(attach_path.absolute())
     
     # Hardcoded fallback for common location
     common = Path("/home/sim/Obsi/attachments") / filename
     if common.exists():
-        if staging_dir:
-            try:
-                return os.path.relpath(common.absolute(), staging_dir.absolute())
-            except ValueError:
-                return str(common.absolute())
         return str(common.absolute())
     
     return embed_path
@@ -560,28 +540,51 @@ def needs_staging(content: str) -> bool:
     return has_wikilinks or has_canvas or has_excalidraw_md
 
 
+
+def find_project_root(start_dir: Path) -> Path:
+    """Find the Quarto project root by looking for _quarto.yml."""
+    current = start_dir.absolute()
+    for _ in range(15):
+        if (current / "_quarto.yml").exists():
+            return current
+        if (current / ".git").exists():
+            return current
+        if current.parent == current:
+            break
+        current = current.parent
+    return start_dir.absolute()
+
+
 def render_with_staging(source_file: Path, extra_args: list) -> int:
     """Render the document using a staged copy."""
     
-    project_dir = source_file.parent.absolute()
+    # OLD: project_dir = source_file.parent.absolute()
+    # NEW: Find the actual project root (where _quarto.yml is)
+    project_dir = find_project_root(source_file.parent)
+    source_dir = source_file.parent.absolute()
     
     # Read source first to check what mode we need
     content = source_file.read_text(encoding='utf-8')
     
     # Auto-export any Excalidraw frames (always needed)
+    # Note: convert_excalidraw_frames needs PROJECT context to resolve paths
     convert_excalidraw_frames(content, project_dir)
     
     # Check if we need full staging mode or can use simple direct render
     if not needs_staging(content):
         print("  ℹ Simple mode: only Excalidraw frames, no wikilink staging needed")
         # Just render directly - Excalidraw PNGs are already exported
-        cmd = ["quarto", "render", str(source_file.name)] + extra_args
+        # Run relative to PROJECT ROOT
+        rel_source = source_file.relative_to(project_dir)
+        cmd = ["quarto", "render", str(rel_source)] + extra_args
         print(f"  → Running: {' '.join(cmd)}")
         result = subprocess.run(cmd, cwd=str(project_dir))
         return result.returncode
     
     # Full staging mode for wikilinks/canvas
-    print("  ℹ Full mode: wikilinks detected, using local staging (for path headers)")
+    # Use local staging directory logic but relative to PROJECT ROOT
+    print("  ℹ Full mode: wikilinks detected, applying transformations")
+
     
     # Create staging directory (staging_temp instead of _staging so not hidden)
     staging_dir = project_dir / "staging_temp"
@@ -595,7 +598,6 @@ def render_with_staging(source_file: Path, extra_args: list) -> int:
     quarto_config = project_dir / "_quarto.yml"
     staging_config = staging_dir / "_quarto.yml"
     if quarto_config.exists():
-        import shutil
         shutil.copy2(str(quarto_config), str(staging_config))
         print(f"  ✓ Copied project config to staging")
     
@@ -650,9 +652,14 @@ def render_with_staging(source_file: Path, extra_args: list) -> int:
         
         pdf_found = False
         for pdf_path in pdf_locs:
+            # Move to output directory
             if pdf_path.exists():
                 final_name = source_file.with_suffix(".pdf").name
                 dest = out_dir / final_name
+                # Force overwrite
+                if dest.exists():
+                    dest.unlink()
+                
                 shutil.move(str(pdf_path), str(dest))
                 print(f"  ✅ PDF output: {dest.relative_to(project_dir)}")
                 pdf_found = True
@@ -679,12 +686,121 @@ def render_with_staging(source_file: Path, extra_args: list) -> int:
         return 1
 
 
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: quarto-obsidian-render.py file.qmd [options...]")
+import yaml # Need pyyaml for _quarto.yml parsing
+
+
+def render_project(project_dir: Path, extra_args: list) -> int:
+    """Render the entire Quarto project with Obsidian support."""
+    quarto_yml = project_dir / "_quarto.yml"
+    if not quarto_yml.exists():
+        print(f"Error: _quarto.yml not found in {project_dir}")
         return 1
+
+    with open(quarto_yml, 'r', encoding='utf-8') as f:
+        config = yaml.safe_load(f)
+
+    if 'book' not in config or 'chapters' not in config['book']:
+        print("Error: No chapters found in _quarto.yml 'book' section.")
+        return 1
+
+    chapters = config['book']['chapters']
+    staged_mapping = {}
     
-    source_file = Path(sys.argv[1]).absolute()
+    # Create staging directory
+    staging_dir = project_dir / "staging_temp"
+    staging_dir.mkdir(exist_ok=True)
+
+    print("  ℹ Project mode: checking chapters for Obsidian syntax")
+
+    # 1. Process chapters and stage those that need it
+    new_chapters = []
+    for chapter in chapters:
+        if isinstance(chapter, dict):
+            # Handle part/chapter structure if needed, but for now simple list
+            new_chapters.append(chapter)
+            continue
+            
+        chapter_path = project_dir / chapter
+        if not chapter_path.exists():
+            print(f"  ⚠ Chapter not found: {chapter}")
+            new_chapters.append(chapter)
+            continue
+
+        content = chapter_path.read_text(encoding='utf-8')
+        
+        # Auto-export Excalidraw frames regardless of staging
+        convert_excalidraw_frames(content, project_dir)
+        
+        if needs_staging(content):
+            print(f"  → Staging chapter: {chapter}")
+            convert_canvas_files(content, project_dir)
+            transformed = transform_wikilinks(content, project_dir, staging_dir)
+            transformed = transform_layout_to_subfigure(transformed, staging_dir)
+            
+            staged_name = f"staged_{Path(chapter).name}"
+            staged_file = staging_dir / staged_name
+            staged_file.write_text(transformed, encoding='utf-8')
+            
+            # Map chapter to staged path relative to project root
+            new_chapters.append(str(staged_file.relative_to(project_dir)))
+        else:
+            new_chapters.append(chapter)
+
+    # 2. Backup original _quarto.yml and swap in staged config
+    backup_config = project_dir / "_quarto.yml.orig"
+    temp_config_path = project_dir / "_quarto.yml"
+    
+    # Save original content
+    original_yml_content = quarto_yml.read_text(encoding='utf-8')
+    
+    staged_config = config.copy()
+    staged_config['book']['chapters'] = new_chapters
+    
+    # Write backup
+    backup_config.write_text(original_yml_content, encoding='utf-8')
+    
+    try:
+        # Write staged config to _quarto.yml
+        with open(temp_config_path, 'w', encoding='utf-8') as f:
+            yaml.dump(staged_config, f)
+        
+        # 3. Render project
+        cmd = ["quarto", "render"] + extra_args
+        print(f"  → Running: {' '.join(cmd)}")
+        result = subprocess.run(cmd, cwd=str(project_dir))
+        
+        # 4. Success message
+        if result.returncode == 0:
+            print(f"  ✅ Project rendered successfully")
+        
+        return result.returncode
+    finally:
+        # Restore backup
+        if backup_config.exists():
+            shutil.copy2(str(backup_config), str(temp_config_path))
+            backup_config.unlink()
+        # Cleanup staging_temp is handled by the user or next run
+        pass
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Obsidian-aware Quarto render")
+    parser.add_argument("file", nargs="?", help="QMD file to render")
+    parser.add_argument("--project", action="store_true", help="Render the whole project")
+    
+    args, extra = parser.parse_known_args()
+    
+    project_dir = find_project_root(Path.cwd())
+    
+    print(f"\n{'='*60}")
+    print(f"Obsidian-aware Quarto render (source-preserving)")
+    print(f"Project root: {project_dir}")
+    print(f"{'='*60}")
+
+    if args.project or not args.file:
+        return render_project(project_dir, extra)
+    
+    source_file = Path(args.file).absolute()
     if not source_file.exists():
         print(f"Error: File not found: {source_file}")
         return 1
@@ -692,15 +808,8 @@ def main():
     if source_file.suffix != '.qmd':
         print(f"Error: Expected .qmd file, got {source_file.suffix}")
         return 1
-    
-    extra_args = sys.argv[2:]
-    
-    print(f"\n{'='*60}")
-    print(f"Obsidian-aware Quarto render (source-preserving)")
-    print(f"Source: {source_file}")
-    print(f"{'='*60}")
-    
-    return render_with_staging(source_file, extra_args)
+        
+    return render_with_staging(source_file, extra)
 
 
 if __name__ == "__main__":
