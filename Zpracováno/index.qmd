@@ -1,0 +1,25 @@
+# Úvod
+
+Tato seminární práce pro předmět **4IZ431 - Algoritmy umělé inteligence** se skládá ze dvou částí, které demonstrují aplikaci prohledávacích algoritmů v multiagentním prostředí.
+
+## Struktura práce
+
+### Část 1: Pacman Multiagent (Warm-up)
+Úvodní část práce se zaměřuje na implementaci agentů pro hru Pacman v prostředí UC Berkeley AI. Cílem této "zahřívací" fáze bylo ověřit základní pochopení algoritmů:
+- **Reflex Agent**: Jednoduché reaktivní chování.
+- **Minimax**: Základní prohledávání herního stromu.
+- **Alpha-Beta Pruning**: Optimalizace prohledávání.
+- **Expectimax**: Probabilistické rozhodování proti náhodným duchům.
+
+Tato část byla zpracována s důrazem na **100% splnění autograder testů** a efektivitu implementace.
+
+### Část 2: Anglická Dáma (Main Event)
+Hlavní část práce se věnuje komplexní analýze koncovky v Anglické dámě (Checkers). Zde je prezentováno hlubší zkoumání problematiky:
+- **Návrh stavového prostoru**: Reprezentace herního plánu a tahů.
+- **Endgame Heuristiky**: Ladění hodnotící funkce pro specifické koncovky (2 králové vs 1 král).
+- **Simulace**: Analýza úspěšnosti strategií (např. "Double Corner" strategie).
+- **Vizualizace**: Generování prohledávacích stromů a statistik.
+
+Cílem této části bylo nejen implementovat funkčního agenta, ale především detailně analyzovat jeho rozhodovací proces a optimalizovat jeho strategii pro konkrétní scénáře.
+
+

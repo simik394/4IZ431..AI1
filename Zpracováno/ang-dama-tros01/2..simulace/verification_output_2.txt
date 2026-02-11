@@ -1,0 +1,34 @@
+ERROR: LoadError: Some tests did not pass: 22 passed, 0 failed, 1 errored, 0 broken.
+in expression starting at /home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:8
+Starting restored file exec...
+DEBUG: Generated moves for King Promotion test:
+King Promotion Stops Turn: Error During Test at /home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:115
+  Got exception outside of a @test
+  UndefVarError: `moves` not defined in `Main`
+  Suggestion: check for spelling errors or missing imports.
+  Stacktrace:
+   [1] macro expansion
+     @ ~/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:162 [inlined]
+   [2] macro expansion
+     @ ~/.julia/juliaup/julia-1.12.4+0.x64.linux.gnu/share/julia/stdlib/v1.12/Test/src/Test.jl:1776 [inlined]
+   [3] macro expansion
+     @ ~/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:128 [inlined]
+   [4] macro expansion
+     @ ~/.julia/juliaup/julia-1.12.4+0.x64.linux.gnu/share/julia/stdlib/v1.12/Test/src/Test.jl:1776 [inlined]
+   [5] top-level scope
+     @ ~/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:10
+   [6] include(mod::Module, _path::String)
+     @ Base ./Base.jl:306
+   [7] exec_options(opts::Base.JLOptions)
+     @ Base ./client.jl:317
+   [8] _start()
+     @ Base ./client.jl:550
+Test Summary:                       | Pass  Error  Total  Time
+English Draughts Rules Verification |   22      1     23  1.2s
+  Coordinate Conversion             |    8             8  0.0s
+  Move Generation - Basic           |    2             2  0.3s
+  Mandatory Jumping                 |    5             5  0.0s
+  Multi-hop Captures                |    4             4  0.0s
+  King Promotion Stops Turn         |           1      1  0.9s
+  King Movement and Backward Jumps  |    3             3  0.0s
+RNG of the outermost testset: Random.Xoshiro(0x773a35852ad16c65, 0x09adab5ff799a33c, 0xdf3708c20552122c, 0xaa700cd9fd91d2a7, 0x9966bd651b357386)

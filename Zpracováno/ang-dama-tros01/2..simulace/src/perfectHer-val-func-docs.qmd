@@ -3,18 +3,7 @@ title: "Perfect Endgame Heuristic"
 subtitle: "Anglická dáma - Obecne principy s kontextovou zavislosti"
 author: "AI1 Projekt"
 date: today
-format:
-  pdf:
-    documentclass: article
-    papersize: a4
-    fontsize: 11pt
-    geometry:
-      - margin=2.5cm
-    colorlinks: true
-    toc: true
-    toc-depth: 3
-    number-sections: true
-    highlight-style: github
+
 jupyter: julia-1.12
 execute:
   eval: false
@@ -66,31 +55,31 @@ Pri zmene zdrojoveho kodu se dokumentace automaticky aktualizuje.
 
 ## PRINCIP 1: Material a 1v1 ochrana
 
-```{.julia include="heuristics.jl" region="perfect_material"}
+```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_material"}
 ```
 
-```{.julia include="heuristics.jl" region="perfect_1v1"}
+```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_1v1"}
 ```
 
 > **Rozdil od Optimal:** `optimal` pouziva penaltu -2000, `perfect` pouziva hard forbidden -99999.
 
 ## PRINCIP 2: Pozice cerveneho
 
-```{.julia include="heuristics.jl" region="perfect_red_pos"}
+```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_red_pos"}
 ```
 
 > **Klicovy rozdil:** Pozice cerveneho je primo viditelna v hodnote - penalta I bonus.
 
 ## PRINCIP 3: Koordinovany utok (Squeeze)
 
-```{.julia include="heuristics.jl" region="perfect_coordination"}
+```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_coordination"}
 ```
 
 \newpage
 
 ## PRINCIP 4: Penalta za zbytecny ustup
 
-```{.julia include="heuristics.jl" region="perfect_retreat"}
+```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_retreat"}
 ```
 
 > **Toto zamezuje hre na cas** - bily se nemuze utahovat do nekonecna.
@@ -99,7 +88,7 @@ Pri zmene zdrojoveho kodu se dokumentace automaticky aktualizuje.
 
 Kracive logika - rozliseni **kotvy** a **operatora**:
 
-```{.julia include="heuristics.jl" region="perfect_net"}
+```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_net"}
 ```
 
 > **Toto je klicova inovace** - jakmile kotva drzi roh, operator MUSI jit diagonalne (14→18), ne k rohu (14→10).
@@ -110,19 +99,19 @@ Kracive logika - rozliseni **kotvy** a **operatora**:
 
 Čím méně tahů má červený, tím lépe. 0 tahů = výhra.
 
-```{.julia include="heuristics.jl" region="perfect_mobility"}
+```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_mobility"}
 ```
 
 ## PRINCIP 7: Cornering (Tlak k okrajům)
 
 Tlačení červeného k okrajům desky ("Kontrola hry").
 
-```{.julia include="heuristics.jl" region="perfect_cornering"}
+```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_cornering"}
 ```
 
 ## PRINCIP 8: Kontextove zavisle rizeni rohu
 
-```{.julia include="heuristics.jl" region="perfect_corner_control"}
+```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_corner_control"}
 ```
 
 > **Kontextova zavislost** - bonus za roh POUZE kdyz tam jeste nikdo neni.
@@ -133,7 +122,7 @@ Tlačení červeného k okrajům desky ("Kontrola hry").
 
 Kricka optimalizace pro reseni horizon effectu:
 
-```{.julia include="testvaluefunc.jl" region="move_ordering"}
+```{.julia include="ang-dama-tros01/2..simulace/src/testvaluefunc.jl" region="move_ordering"}
 ```
 
 **Vyhody:**

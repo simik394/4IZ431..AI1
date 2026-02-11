@@ -1756,7 +1756,7 @@ end
 # if abspath(PROGRAM_FILE) == @__FILE__
 # println("STARTING SIMULATION (UNCONDITIONAL)")
 # MOŽNOST A: Simulace zadání s logováním stromu (DOPORUČENO PRO ÚLOHU)
-# run_assignment_simulation(search_depth=5, num_turns=100, save_trees=true)
+# run_assignment_simulation(search_depth=6, num_turns=20, save_trees=true)
 
 # MOŽNOST B: Standardní self-play bez logování
 # run_self_play(search_depth=4, max_turns=20, delay=0.1)
@@ -1765,3 +1765,58 @@ end
 # print_notation_map()
 # end
 
+
+"""
+    minimax_pure(board, depth, is_maximizing, move_str)
+
+Čistá verze minimaxu BEZ alpha-beta ořezávání a BEZ pruningu.
+Slouží jako baseline pro ověření správnosti (ground truth).
+
+Prochází KOMPLETNÍ herní strom do dané hloubky.
+"""
+function minimax_pure(board::Matrix{Int}, depth::Int, is_maximizing::Bool, move_str::String;
+    config::HeuristicConfig=DEFAULT_CONFIG)
+    global node_counter
+    node_counter += 1 # Jen počítáme navštívené uzly pro porovnání výkonu
+
+    # 1. Terminální stav (hloubka 0)
+    if depth == 0
+        return Float64(perfect_endgame_heuristic(board, config)), nothing
+    end
+
+    # 2. Generování tahů
+    moves = get_legal_moves(board, is_maximizing ? WHITE : RED)
+
+    # 3. Terminální stav (žádné tahy)
+    if isempty(moves)
+        return is_maximizing ? -100000.0 : 100000.0, nothing
+    end
+
+    best_move = nothing
+
+    if is_maximizing
+        max_eval = -Inf
+        for move in moves
+            new_board = make_move(board, move)
+            eval, _ = minimax_pure(new_board, depth - 1, false, ""; config=config)
+
+            if eval > max_eval
+                max_eval = eval
+                best_move = move
+            end
+        end
+        return max_eval, best_move
+    else
+        min_eval = Inf
+        for move in moves
+            new_board = make_move(board, move)
+            eval, _ = minimax_pure(new_board, depth - 1, true, ""; config=config)
+
+            if eval < min_eval
+                min_eval = eval
+                best_move = move
+            end
+        end
+        return min_eval, best_move
+    end
+end

@@ -1,0 +1,5 @@
+Starting restored file exec...
+DEBUG: Generated moves for King Promotion test:
+  1: From 3,6 To 1,4 Jump=true Caught=1
+Test Summary:                       | Pass  Total  Time
+English Draughts Rules Verification |   25     25  0.3s

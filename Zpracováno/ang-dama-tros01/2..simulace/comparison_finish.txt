@@ -1,0 +1,32 @@
+Starting restored file exec...
+================================================================================
+COMPARISON: PURE MINIMAX vs ALPHA-BETA
+================================================================================
+
+Scenarios: Endgame 2v2 (Depth 6)
+----------------------------------------
+PURE: Score=0.0, Move=18-23
+      Time=30 milliseconds, Nodes=35804
+A-B : Score=0.0, Move=18-23
+      Time=10 milliseconds
+✅ MATCH! Scores are identical.
+⚠️ Moves differ (acceptable if scores match): 18-23 vs 18-23
+🚀 Speedup: 3.0x
+
+Scenarios: Standard Start (Depth 4)
+----------------------------------------
+PURE: Score=10000.0, Move=21-17
+      Time=0 milliseconds, Nodes=1828
+A-B : Score=10000.0, Move=21-17
+      Time=0 milliseconds
+✅ MATCH! Scores are identical.
+⚠️ Moves differ (acceptable if scores match): 21-17 vs 21-17
+
+Scenarios: Assignment (Depth 6)
+----------------------------------------
+PURE: Score=4160.0, Move=14-9
+      Time=1 millisecond, Nodes=2090
+A-B : Score=4160.0, Move=14-9
+      Time=0 milliseconds
+✅ MATCH! Scores are identical.
+⚠️ Moves differ (acceptable if scores match): 14-9 vs 14-9

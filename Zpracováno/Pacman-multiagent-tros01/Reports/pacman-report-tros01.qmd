@@ -1,0 +1,53 @@
+---
+title: "Pacman Multiagent"
+---
+
+## Úvod
+Tato část práce dokumentuje řešení sady úloh **Multi-Agent Pacman**. Cílem bylo naimplementovat agenty schopné efektivního rozhodování v prostředí s protivníky (duchy).
+
+::: {.callout-note}
+Všechny implementace splňují požadavky autograderu na **100 %** (plný počet bodů).
+:::
+
+## 1. Reflex Agent
+Prvním krokem byl návrh reflexivního agenta, který se rozhoduje pouze na základě aktuálního stavu, bez prohledávání do hloubky.
+
+### Klíčové principy
+- **Jídlo**: Agent je motivován převrácenou vzdáleností k nejbližšímu jídlu (čím blíže, tím lépe).
+- **Duchové**: Pokud je duch příliš blízko (vzdálenost < 2) a není ve stavu "scared", agent dostává extrémní penalizaci.
+- **Scared Ghosts**: Pokud je duch zranitelný, agent je motivován k jeho snědení (ale s menší prioritou než přežití).
+
+## 2. Minimax
+Implementace algoritmu Minimax umožňuje agentovi předvídat tahy soupeřů (duchů) za předpokladu, že hrají optimálně (snaží se minimalizovat Pacmanovo skóre).
+
+### Implementace
+Algoritmus je implementován rekurzivně. Pacman (MAX) maximalizuje hodnotící funkci, zatímco duchové (MIN) ji minimalizují.
+
+```python
+# Ukázka logiky rozhodování (pseudokód)
+def get_action(state, depth, agent_index):
+    if terminal(state) or depth == 0:
+        return evaluate(state)
+        
+    if agent_index == PACMAN:
+        return max(get_action(next_state, depth, next_agent) for next_state in successors) # <1>
+    else:
+        return min(get_action(next_state, depth, next_agent) for next_state in successors) # <2>
+```
+1. Pacman hledá tah s nejvyšším ohodnocením.
+2. Duchové hledají tah, který Pacmanovi nejvíce uškodí.
+
+## 3. Alpha-Beta Pruning
+Pro zefektivnění prohledávání byla implementována metoda Alpha-Beta prořezávání. Ta umožňuje ignorovat větve stromu, které nemohou ovlivnit finální rozhodnutí.
+
+- **Alpha**: Nejlepší hodnota, kterou může MAX (Pacman) zaručit.
+- **Beta**: Nejlepší hodnota, kterou může MIN (Duch) zaručit.
+
+Pokud v uzlu MIN nalezneme hodnotu menší než Alpha, víme, že MAX do tohoto uzlu nikdy nevstoupí, a můžeme prohledávání ukončit (pruning).
+
+::: {.callout-tip}
+Tato optimalizace umožnila prohledávat do větší hloubky ve stejném čase, což vedlo k výrazně silnější hře agenta.
+:::
+
+## Závěr "Warm-up" části
+Tato sada úloh posloužila jako ověření základních principů adversariálního prohledávání. Získané znalosti (zejména o Alpha-Beta prořezávání a návrhu heuristik) byly následně aplikovány a výrazně rozšířeny v hlavní části práce - **Analýze Anglické dámy**.

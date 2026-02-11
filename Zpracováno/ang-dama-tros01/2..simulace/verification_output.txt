@@ -1,0 +1,33 @@
+ERROR: LoadError: Some tests did not pass: 24 passed, 1 failed, 0 errored, 0 broken.
+in expression starting at /home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:8
+Starting restored file exec...
+DEBUG: Generated moves for King Promotion test:
+  1: From 3,4 To 1,2 Jump=true Caught=1
+  2: From 3,4 To 1,6 Jump=true Caught=1
+  3: From 3,6 To 1,4 Jump=true Caught=1
+King Promotion Stops Turn: Test Failed at /home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:170
+  Expression: length(moves) == 1
+   Evaluated: 3 == 1
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.12.4+0.x64.linux.gnu/share/julia/stdlib/v1.12/Test/src/Test.jl:680 [inlined]
+ [2] macro expansion
+   @ ~/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:170 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.12.4+0.x64.linux.gnu/share/julia/stdlib/v1.12/Test/src/Test.jl:1776 [inlined]
+ [4] macro expansion
+   @ ~/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:119 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.12.4+0.x64.linux.gnu/share/julia/stdlib/v1.12/Test/src/Test.jl:1776 [inlined]
+ [6] top-level scope
+   @ ~/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:10
+Test Summary:                       | Pass  Fail  Total  Time
+English Draughts Rules Verification |   24     1     25  1.4s
+  Coordinate Conversion             |    8            8  0.0s
+  Move Generation - Basic           |    2            2  0.2s
+  Mandatory Jumping                 |    5            5  0.0s
+  Multi-hop Captures                |    4            4  0.0s
+  King Promotion Stops Turn         |    2     1      3  1.1s
+  King Movement and Backward Jumps  |    3            3  0.0s
+RNG of the outermost testset: Random.Xoshiro(0x5ae6e8cf88e3949c, 0xddb1ba2d8236d94f, 0xe12eb770849434e5, 0xe1dea3885da3486a, 0x86fc254535e423e8)

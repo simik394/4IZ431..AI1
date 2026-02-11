@@ -1,0 +1,30 @@
+ERROR: LoadError: Some tests did not pass: 24 passed, 1 failed, 0 errored, 0 broken.
+in expression starting at /home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:8
+Starting restored file exec...
+DEBUG: Generated moves for King Promotion test:
+  1: From 3,6 To 1,4 Jump=true Caught=1
+King Promotion Stops Turn: Test Failed at /home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:172
+  Expression: move.to.r == dest_pos.r && move.to.c == dest_pos.c
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.12.4+0.x64.linux.gnu/share/julia/stdlib/v1.12/Test/src/Test.jl:680 [inlined]
+ [2] macro expansion
+   @ ~/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:172 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.12.4+0.x64.linux.gnu/share/julia/stdlib/v1.12/Test/src/Test.jl:1776 [inlined]
+ [4] macro expansion
+   @ ~/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:128 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.12.4+0.x64.linux.gnu/share/julia/stdlib/v1.12/Test/src/Test.jl:1776 [inlined]
+ [6] top-level scope
+   @ ~/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/verify_rules.jl:10
+Test Summary:                       | Pass  Fail  Total  Time
+English Draughts Rules Verification |   24     1     25  1.2s
+  Coordinate Conversion             |    8            8  0.0s
+  Move Generation - Basic           |    2            2  0.2s
+  Mandatory Jumping                 |    5            5  0.0s
+  Multi-hop Captures                |    4            4  0.0s
+  King Promotion Stops Turn         |    2     1      3  0.9s
+  King Movement and Backward Jumps  |    3            3  0.0s
+RNG of the outermost testset: Random.Xoshiro(0xce6d47d107902234, 0x9cf048436304b846, 0x394f7b3888faca14, 0x56abf263507913a2, 0x227f296d10d3c6d8)

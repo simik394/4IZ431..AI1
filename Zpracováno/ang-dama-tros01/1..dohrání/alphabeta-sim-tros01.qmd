@@ -3,14 +3,7 @@ title: ""
 aliases: []
 id: alphabeta-sim-tros01
 tags: []
-format:
-  pdf:
-    colorlinks: true
-    header-includes:
-      - '\usepackage{caption}'
-    include-before-body: "titlepage.tex"
-    number-sections: true
-    toc: true
+
 execute:
   echo: false
   warning: false
@@ -171,6 +164,7 @@ Při hloubce prohledávání 6 (3 tahy každého) se stále setkáváme s "Horiz
 
 Následující sekvence snímků (z Excalidraw) vizuálně demonstruje úspěšné uplatnění výše popsaných principů v praxi.
 
+<!--
 ::: {#fig-game-phases layout-ncol=2}
 
 ![[/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/1..dohrání/minimaxalphabeta-assignment.excalidraw.md#^frame=6plydeepbutstillstarting|Fáze 1 - Horizont efekt - AI vidí hrozbu, ale je těsně za horizontem.]]{#fig-phase1}
@@ -191,6 +185,11 @@ Následující sekvence snímků (z Excalidraw) vizuálně demonstruje úspěšn
 
 Manuální analýza klíčových fází hry
 :::
+-->
+
+> **Poznámka:** Vizuální analýza fází hry (exporty z Excalidraw) není v této verzi dokumentu k dispozici. Odkazujeme na zdrojové soubory v repozitáři.
+
+***
 
 
 ***
@@ -218,4 +217,4 @@ Tato změna umožnila agentovi najít vítěznou sekvenci: `14-9` $\to$ `1-5` $\
 ***
 
 ### Závěr k analýze
-Jak vidíme na obrázcích @fig-phase4 až @fig-phase7, jakmile se podaří sestavit "síť" (princip #4), hra přechází do deterministické fáze. Heuristika v této chvíli dává tak vysoké skóre, že Alpha-Beta ořezávání eliminuje téměř všechny ostatní větve a agent hraje prakticky okamžitě.
+Jakmile se podaří sestavit "síť" (princip #4), hra přechází do deterministické fáze. Heuristika v této chvíli dává tak vysoké skóre, že Alpha-Beta ořezávání eliminuje téměř všechny ostatní větve a agent hraje prakticky okamžitě.

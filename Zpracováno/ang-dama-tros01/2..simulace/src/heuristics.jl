@@ -933,8 +933,17 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
                     end
 
                     # Penalta pokud OBA jsou příliš blízko rohu (crowding)
-                    if min(dist1, dist2) <= 2 && max(dist1, dist2) <= 2
+                    # VIJIMKA: Pokud je rudy v oblasti rohu (1, 5, 6), je to chtene (Squeeze)
+                    # 1=(1,2), 5=(2,1), 6=(2,3). Tzn row<=2, col<=3.
+                    red_at_dc_area = (red_row <= 2 && red_col <= 3)
+
+                    if min(dist1, dist2) <= 2 && max(dist1, dist2) <= 2 && !red_at_dc_area
                         score -= 600.0  # Crowding! (Relaxed condition from <=3 to <=2)
+                    end
+
+                    # BONUS: Pokud je rudy v rohu a my ho tam drzime (oba blizko), je to SKVELE
+                    if red_at_dc_area && max(dist1, dist2) <= 2
+                        score += 500.0 # Reward for successful trap
                     end
                 end
 

@@ -1,0 +1,53 @@
+project:
+  type: book
+  output-dir: out
+
+execute:
+  freeze: auto
+
+book:
+  title: "Seminární práce 4IZ431"
+  subtitle: "Pacman Multiagent & Anglická Dáma"
+  author: "Tros01"
+  date: "2026-02-11"
+  chapters:
+    - index.qmd
+    - part: "Part 1: Pacman Multiagent (Warm-up)"
+      chapters:
+        - Pacman-multiagent-tros01/Reports/pacman-report-tros01.qmd
+    - part: "Part 2: Anglická Dáma (Main Event)"
+      chapters:
+        - ang-dama-tros01/index.qmd
+        - ang-dama-tros01/1..dohrání/alphabeta-sim-tros01.qmd
+        - ang-dama-tros01/2..simulace/src/perfectHer-val-func-docs.qmd
+
+# metadata-files:
+#   - /home/sim/.config/quarto/shared/quarto-base.yml
+
+filters:
+  - include-code-files
+
+format:
+  pdf:
+    documentclass: report
+    papersize: a4
+    fontsize: 11pt
+    max-width: 100%
+    geometry:
+      - margin=2.5cm
+    colorlinks: true
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    highlight-style: github
+    latex-max-runs: 3
+    include-in-header:
+      - text: |
+          \usepackage{wrapfig}
+          \usepackage{subcaption}
+          \setmainfont{Linux Libertine O}
+          \setsansfont{Linux Biolinum O}
+          \setmonofont{Linux Libertine Mono O}
+          \setmathfont{Latin Modern Math}
+    include-before-body:
+      - title.tex
