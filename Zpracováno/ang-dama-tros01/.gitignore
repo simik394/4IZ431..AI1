@@ -4,7 +4,7 @@
 # Let's keep out/ ignored if it contains generated artifacts.
 /out/
 _build/*.quarto_ipynb
-.stash/
+/.stash/
 __python__/
 
 # LaTeX build artifacts
