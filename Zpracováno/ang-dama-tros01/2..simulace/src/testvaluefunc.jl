@@ -388,12 +388,12 @@ end
 """
 Exportuje strom do DOT formátu pro Graphviz.
 """
-function export_tree_to_dot(filename::String)
+function export_tree_to_dot(filename::String; rankdir::String="TB")
     global tree_nodes
 
     open(filename, "w") do f
         println(f, "digraph SearchTree {")
-        println(f, "    rankdir=TB;")
+        println(f, "    rankdir=$rankdir;")
         println(f, "    node [shape=box, fontsize=10];")
         println(f, "    edge [fontsize=8];")
         println(f, "")
@@ -512,7 +512,7 @@ end
 Exportuje strom do DOT formátu s limitem hloubky a volitelně vykreslí.
 Užitečné pro velké stromy - zobrazí jen horní úrovně.
 """
-function export_tree_to_dot_limited(filename::String, max_display_depth::Int; render::Bool=true)
+function export_tree_to_dot_limited(filename::String, max_display_depth::Int; render::Bool=true, rankdir::String="TB")
     global tree_nodes
 
     if isempty(tree_nodes)
@@ -530,7 +530,7 @@ function export_tree_to_dot_limited(filename::String, max_display_depth::Int; re
 
     open(filename, "w") do f
         println(f, "digraph SearchTree {")
-        println(f, "    rankdir=TB;")
+        println(f, "    rankdir=$rankdir;")
         println(f, "    node [shape=box, fontsize=10];")
         println(f, "    edge [fontsize=8];")
         println(f, "    label=\"Hloubka: $max_display_depth úrovní (z $tree_max_depth)\";")
