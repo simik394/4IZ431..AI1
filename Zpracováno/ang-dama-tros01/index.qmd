@@ -9,3 +9,5 @@ Zahrnuje to dvě hlavní fáze mého (mírně zoufalého) snažení:
 2. **Simulace**: Kde jsem ladil čísla v heuristické funkci tak dlouho, dokud to nezačalo fungovat.
 
 Je to všechno pohromadě v jednom dokumentu, aby se v tom dalo nějak rozumně orientovat.
+
+![Vizualizace herního stromu (Master Canvas)](1..dohrání/minimaxalphabeta-assignment.png){#fig-assignment width=90%}

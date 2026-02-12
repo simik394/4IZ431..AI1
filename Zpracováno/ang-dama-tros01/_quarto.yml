@@ -47,4 +47,5 @@ format:
           \setsansfont{Linux Biolinum O}
           \setmonofont{Linux Libertine Mono O}
           \setmathfont{Latin Modern Math}
-      - title.tex
+    include-before-body:
+      - titlepage.tex

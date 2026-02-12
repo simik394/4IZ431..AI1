@@ -55,31 +55,31 @@ Pri zmene zdrojoveho kodu se dokumentace automaticky aktualizuje.
 
 ## PRINCIP 1: Material a 1v1 ochrana
 
-```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_material"}
+```{.julia include="heuristics.jl" region="perfect_material"}
 ```
 
-```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_1v1"}
+```{.julia include="heuristics.jl" region="perfect_1v1"}
 ```
 
 > **Rozdil od Optimal:** `optimal` pouziva penaltu -2000, `perfect` pouziva hard forbidden -99999.
 
 ## PRINCIP 2: Pozice cerveneho
 
-```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_red_pos"}
+```{.julia include="heuristics.jl" region="perfect_red_pos"}
 ```
 
 > **Klicovy rozdil:** Pozice cerveneho je primo viditelna v hodnote - penalta I bonus.
 
 ## PRINCIP 3: Koordinovany utok (Squeeze)
 
-```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_coordination"}
+```{.julia include="heuristics.jl" region="perfect_coordination"}
 ```
 
 \newpage
 
 ## PRINCIP 4: Penalta za zbytecny ustup
 
-```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_retreat"}
+```{.julia include="heuristics.jl" region="perfect_retreat"}
 ```
 
 > **Toto zamezuje hre na cas** - bily se nemuze utahovat do nekonecna.
@@ -88,7 +88,7 @@ Pri zmene zdrojoveho kodu se dokumentace automaticky aktualizuje.
 
 Kracive logika - rozliseni **kotvy** a **operatora**:
 
-```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_net"}
+```{.julia include="heuristics.jl" region="perfect_net"}
 ```
 
 > **Toto je klicova inovace** - jakmile kotva drzi roh, operator MUSI jit diagonalne (14→18), ne k rohu (14→10).
@@ -99,19 +99,19 @@ Kracive logika - rozliseni **kotvy** a **operatora**:
 
 Čím méně tahů má červený, tím lépe. 0 tahů = výhra.
 
-```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_mobility"}
+```{.julia include="heuristics.jl" region="perfect_mobility"}
 ```
 
 ## PRINCIP 7: Cornering (Tlak k okrajům)
 
 Tlačení červeného k okrajům desky ("Kontrola hry").
 
-```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_cornering"}
+```{.julia include="heuristics.jl" region="perfect_cornering"}
 ```
 
 ## PRINCIP 8: Kontextove zavisle rizeni rohu
 
-```{.julia include="ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_corner_control"}
+```{.julia include="heuristics.jl" region="perfect_corner_control"}
 ```
 
 > **Kontextova zavislost** - bonus za roh POUZE kdyz tam jeste nikdo neni.
@@ -122,7 +122,7 @@ Tlačení červeného k okrajům desky ("Kontrola hry").
 
 Kricka optimalizace pro reseni horizon effectu:
 
-```{.julia include="ang-dama-tros01/2..simulace/src/testvaluefunc.jl" region="move_ordering"}
+```{.julia include="testvaluefunc.jl" region="move_ordering"}
 ```
 
 **Vyhody:**
@@ -137,7 +137,7 @@ Kricka optimalizace pro reseni horizon effectu:
 ```{julia}
 #| label: load-simulation-data
 #| eval: true
-#| echo: true
+#| echo: false
 #| output: asis
 
 # ── Nalezeni posledniho simulation runu ──────────────────────────────
@@ -252,52 +252,61 @@ println("\n> $result_str")
 ```{julia}
 #| label: render-pragmatic-tree
 #| eval: true
-#| echo: true
+#| echo: false
 #| output: asis
 
 # ── Generování stromu pro Pragmatic variantu ─────────────────────────
 # Chceme vizualizovat pouze "manuální" simulaci = čistou vítěznou cestu
 # Použijeme nastavení 10,14 vs 1 a zapneme logování stromu s ořezáváním
 
-# Setup
-include(joinpath(cur_doc_dir, "testvaluefunc.jl"))
-board = setup_benchmark_board() # Použijeme funkci definovanou v předchozím bloku (nutno zajistit pořadí)
-# Nebo ji znova definujeme pro jistotu, pokud bloky nesdílí scope (Quarto usually shares but depends on config)
-function setup_viz_board()
+# Suppress debug output from includes and calculation
+redirect_stdio(stdout=devnull) do
+    # Setup
+    include(joinpath(cur_doc_dir, "testvaluefunc.jl"))
+    
+    # Inline setup to avoid World Age issues
     board = zeros(Int, 8, 8)
-    p10 = notation_to_position(10); board[p10.r, p10.c] = WHITE_KING
-    p14 = notation_to_position(14); board[p14.r, p14.c] = WHITE_KING
-    p1 = notation_to_position(1);   board[p1.r, p1.c] = RED_KING
-    return board
+    # We use invokelatest for notation_to_position just in case needed, but usually inline is fine if included
+    # actually, purely inline might still have issues if include happens in same block.
+    # But let's try direct calls.
+    p10 = Base.invokelatest(notation_to_position, 10)
+    board[p10.r, p10.c] = WHITE_KING
+    p14 = Base.invokelatest(notation_to_position, 14)
+    board[p14.r, p14.c] = WHITE_KING
+    p1 = Base.invokelatest(notation_to_position, 1)
+    board[p1.r, p1.c] = RED_KING
+
+    # Spuštění s logováním
+    global tree_nodes = TreeNode[]
+    global tree_enabled = true
+    global node_counter = 0
+
+    # Použijeme minimax_with_tree s PRUNE_HUMAN (3) - Beam Search K=2
+    # To zajistí malý, čitelný strom (~13 uzlů) pro vizualizaci principu
+    # Note: We must pass the Enum type, not just Int
+    Base.invokelatest(minimax_with_tree, board, 6, -Inf, Inf, true, 0, "Start"; pruning=PruningStrategy(3))
+
+    # Export do DOT
+    tree_out_dir = joinpath(cur_doc_dir, "..", "out", "rendered_trees", "pragmatic")
+    mkpath(tree_out_dir)
+    dot_file = joinpath(tree_out_dir, "manual_sim.dot")
+
+    # Využijeme funkci z testvaluefunc.jl
+    Base.invokelatest(export_tree_to_dot, dot_file)
+
+    # Vykreslení
+    png_file = joinpath(tree_out_dir, "manual_sim.png")
+    run(`dot -Tpng -Gsize=10,6! $dot_file -o $png_file`)
 end
 
-board = setup_viz_board()
-
-# Spuštění s logováním
-global tree_nodes = TreeNode[]
-global tree_enabled = true
-global node_counter = 0
-
-# Použijeme minimax_with_tree s PRUNE_LOSS_OF_PIECE (Pragmatic)
-minimax_with_tree(board, 6, -Inf, Inf, true, 0, "Start"; pruning=PRUNE_LOSS_OF_PIECE)
-
-# Export do DOT
-tree_out_dir = joinpath(cur_doc_dir, "..", "out", "rendered_trees", "pragmatic")
-mkpath(tree_out_dir)
-dot_file = joinpath(tree_out_dir, "manual_sim.dot")
-
-# Využijeme funkci z testvaluefunc.jl
-export_tree_to_dot(dot_file)
-
-# Vykreslení
-png_file = joinpath(tree_out_dir, "manual_sim.png")
-run(`dot -Tpng $dot_file -o $png_file`)
-
 # Zobrazení
-println("### Vizualizace rozhodování (Pragmatic/Manual Logic)\n")
-println("Tento strom ukazuje **pouze** větve, které algoritmus reálně musel vyhodnotit (po aplikaci Alpha-Beta a 'Loss of Piece' ořezání).")
+tree_out_dir = joinpath(cur_doc_dir, "..", "out", "rendered_trees", "pragmatic")
+png_file = joinpath(tree_out_dir, "manual_sim.png")
+
+println("### Vizualizace rozhodování (Human/Manual Logic)\n")
+println("Tento strom ukazuje **pouze** větve, které algoritmus reálně musel vyhodnotit (po aplikaci Alpha-Beta a 'Human' ořezání).")
 println("Z původních 2000+ uzlů (Brute Force) zbylo jen **$(length(tree_nodes))**, což odpovídá lidské 'manuální' kontrole - ignorujeme vše, co vede k okamžité ztrátě.")
-println("\n![Pragmatic Tree (Minimalist View)]($(relpath(png_file, cur_doc_dir))){width=100%}\n")
+println("\n![Human Tree (Manual Logic View)]($(relpath(png_file, cur_doc_dir))){width=90%}\n")
 ```
 
 \newpage
@@ -307,40 +316,46 @@ println("\n![Pragmatic Tree (Minimalist View)]($(relpath(png_file, cur_doc_dir))
 V této sekci ověříme správnost Alpha-Beta ořezávání porovnáním s čistým Minimax algoritmem (hrubá síla) na vybrané herní situaci. Oba algoritmy musí najít **stejnou hodnotu skóre** a **stejný nejlepší tah**. Rozdíl bude pouze v počtu prozkoumaných uzlů.
 
 ```{julia}
-#| label: brute-force-validation
+#| label: benchmark-6-variants
 #| eval: true
-#| echo: true
+#| echo: false
 #| output: asis
 
-# Načtení herní logiky (pokud ještě není)
-# Předpokládáme, že jsme v adresáři 'Zpracováno/ang-dama-value-func'
-include(joinpath(cur_doc_dir, "boards.jl"))
-include(joinpath(cur_doc_dir, "heuristics.jl"))
-# testvaluefunc obsahuje minimax_with_tree, musíme ho načíst
-# Pozor: testvaluefunc může spouštět věci v main scope, ale je to struct/funkce def
-include(joinpath(cur_doc_dir, "testvaluefunc.jl"))
+# Load necessary modules if not already loaded
+if !isdefined(Main, :minimax_with_tree)
+    include(joinpath(cur_doc_dir, "testvaluefunc.jl"))
+end
 
-# Definice Minimaxu BEZ ořezávání (pro srovnání)
-function minimax_no_pruning(board::Matrix{Int}, depth::Int, is_maximizing::Bool)
+# Define Benchmark Functions (Locally to ensure they exist for this doc)
+function setup_benchmark_board()
+    board = zeros(Int, 8, 8)
+    p10 = notation_to_position(10)
+    board[p10.r, p10.c] = WHITE_KING
+    p14 = notation_to_position(14)
+    board[p14.r, p14.c] = WHITE_KING
+    p1 = notation_to_position(1)
+    board[p1.r, p1.c] = RED_KING
+    return board
+end
+
+# A. Brute-force: Minimax, No Pruning
+function minimax_no_pruning_bench(board::Matrix{Int}, depth::Int, is_maximizing::Bool)
     if depth == 0
         return Float64(perfect_endgame_heuristic(board)), nothing, 1
     end
-
     player = is_maximizing ? 1 : -1
     moves = get_legal_moves(board, player)
-
     if isempty(moves)
         return is_maximizing ? -99999.0 : 99999.0, nothing, 1
     end
 
     best_move = moves[1]
     total_nodes = 1
-
     if is_maximizing
         max_eval = -Inf
         for move in moves
             new_board = make_move(board, move)
-            score, _, nodes = minimax_no_pruning(new_board, depth - 1, false)
+            score, _, nodes = minimax_no_pruning_bench(new_board, depth - 1, false)
             total_nodes += nodes
             if score > max_eval
                 max_eval = score
@@ -352,7 +367,7 @@ function minimax_no_pruning(board::Matrix{Int}, depth::Int, is_maximizing::Bool)
         min_eval = Inf
         for move in moves
             new_board = make_move(board, move)
-            score, _, nodes = minimax_no_pruning(new_board, depth - 1, true)
+            score, _, nodes = minimax_no_pruning_bench(new_board, depth - 1, true)
             total_nodes += nodes
             if score < min_eval
                 min_eval = score
@@ -363,51 +378,156 @@ function minimax_no_pruning(board::Matrix{Int}, depth::Int, is_maximizing::Bool)
     end
 end
 
-# Wrapper pro Alpha-Beta (aby vracel počet uzlů podobně)
-# minimax_with_tree vrací (score, best_move, node_id). 
-# Počet uzlů zjistíme z globální proměnné tree_nodes, pokud resetujeme strom.
-function run_alphabeta_stats(board, depth, is_max)
-    global tree_nodes = TreeNode[] # Reset globální struktury z testvaluefunc.jl
-    global tree_enabled = true
+# B. Smart: Minimax + Move Ordering
+function minimax_smart_bench(board, depth, is_maximizing)
+    if depth == 0
+        return Float64(perfect_endgame_heuristic(board)), nothing, 1
+    end
+    player = is_maximizing ? 1 : -1
+    moves = get_legal_moves(board, player)
+    if isempty(moves)
+        return is_maximizing ? -99999.0 : 99999.0, nothing, 1
+    end
 
-    score, move, _ = minimax_with_tree(board, depth, -Inf, Inf, is_max, 0, "ROOT")
+    move_scores = [(m, Float64(perfect_endgame_heuristic(make_move(board, m)))) for m in moves]
+    sort!(move_scores, by=x -> x[2], rev=is_maximizing)
+    sorted_moves = [x[1] for x in move_scores]
 
-    return score, move, length(tree_nodes)
+    best_move = sorted_moves[1]
+    total_nodes = 1
+    if is_maximizing
+        max_eval = -Inf
+        for move in sorted_moves
+            new_board = make_move(board, move)
+            score, _, nodes = minimax_smart_bench(new_board, depth - 1, false)
+            total_nodes += nodes
+            if score > max_eval
+                max_eval = score
+                best_move = move
+            end
+        end
+        return max_eval, best_move, total_nodes
+    else
+        min_eval = Inf
+        for move in sorted_moves
+            new_board = make_move(board, move)
+            score, _, nodes = minimax_smart_bench(new_board, depth - 1, true)
+            total_nodes += nodes
+            if score < min_eval
+                min_eval = score
+                best_move = move
+            end
+        end
+        return min_eval, best_move, total_nodes
+    end
 end
 
-# ── Testovací scénář ─────────────────────────────────────────────────
-# Nastavíme zajímavou pozici (např. 6 vs 2, kde je dost tahů)
-# Bílý na 14, 18. Červený na 5 (král).
-# Bílý na tahu.
-test_board = zeros(Int, 8, 8)
-test_board[4, 2] = 2  # Bílý král na 14
-test_board[5, 2] = 2  # Bílý král na 18
-test_board[2, 3] = -2 # Červený král na 7
-test_board[3, 8] = 2  # Další bílý
-test_depth = 4       # Hloubka 4 (dostatečná pro rozdíl, ale rychlá)
+# C-F. Alpha-Beta Variants
+function alphabeta_ordered_bench(board, depth, alpha, beta, is_max, pruning_strat)
+    # 1. Pruning checks
+    if pruning_strat == 1 || pruning_strat == 2 || pruning_strat == 3 # LOSS, RETREAT, HUMAN
+        player_pieces = count(x -> x == WHITE || x == WHITE_KING, board)
+        if player_pieces < 2
+            return -99999.0, nothing, 1
+        end
+    end
+    if (pruning_strat == 2 || pruning_strat == 3) && !is_max # RETREAT, HUMAN
+        w_kings = [Position(r, c) for r in 1:8, c in 1:8 if board[r, c] == WHITE_KING]
+        r_kings = [Position(r, c) for r in 1:8, c in 1:8 if board[r, c] == RED_KING]
+        if length(w_kings) >= 2 && length(r_kings) == 1
+            wk1, wk2 = w_kings[1], w_kings[2]
+            rk = r_kings[1]
+            dist = (max(abs(wk1.r - rk.r), abs(wk1.c - rk.c)) + max(abs(wk2.r - rk.r), abs(wk2.c - rk.c))) / 2.0
+            if dist > 4.5
+                return -9000.0, nothing, 1
+            end
+        end
+    end
 
-# ── Spuštění algoritmů ───────────────────────────────────────────────
-val_bf, move_bf, nodes_bf = minimax_no_pruning(test_board, test_depth, true)
-val_ab, move_ab, nodes_ab = run_alphabeta_stats(test_board, test_depth, true)
+    if depth == 0
+        return Float64(perfect_endgame_heuristic(board)), nothing, 1
+    end
+    player = is_max ? 1 : -1
+    moves = get_legal_moves(board, player)
+    if isempty(moves)
+        return is_max ? -99999.0 : 99999.0, nothing, 1
+    end
 
-# ── Výpis výsledků ───────────────────────────────────────────────────
-println("| Algoritmus | Skore | Nejlepsi tah | Pocet uzlu | Uspora |")
-println("|------------|------:|-------------:|-----------:|-------:|")
+    move_scores = [(m, Float64(perfect_endgame_heuristic(make_move(board, m)))) for m in moves]
+    sort!(move_scores, by=x -> x[2], rev=is_max)
+    sorted_moves = [x[1] for x in move_scores]
 
-move_bf_str = move_bf !== nothing ? format_move(move_bf) : "None"
-move_ab_str = move_ab !== nothing ? format_move(move_ab) : "None"
+    # Human Pruning (Beam K=2)
+    if pruning_strat == 3 && length(sorted_moves) > 2
+        sorted_moves = sorted_moves[1:2]
+    end
 
-# Výpočet úspory
-savings = round(100 * (1 - nodes_ab / nodes_bf), digits=1)
-
-println("| Brute Force (Minimax) | $val_bf | $move_bf_str | $nodes_bf | 0% |")
-println("| Alpha-Beta Pruning | $val_ab | $move_ab_str | $nodes_ab | **$savings%** |")
-
-if val_bf == val_ab && move_bf_str == move_ab_str
-    println("\n> **VERDIKT:** ✅ Algoritmy vrátily shodný výsledek. Alpha-Beta ořezávání je korektní.")
-else
-    println("\n> **VERDIKT:** ❌ Výsledky se liší! Alpha-Beta implementace může být chybná.")
+    best_move = sorted_moves[1]
+    total_nodes = 1
+    if is_max
+        for move in sorted_moves
+            new_board = make_move(board, move)
+            score, _, nodes = alphabeta_ordered_bench(new_board, depth - 1, alpha, beta, false, pruning_strat)
+            total_nodes += nodes
+            if score > alpha
+                alpha = score
+                best_move = move
+            end
+            if alpha >= beta
+                break
+            end
+        end
+        return alpha, best_move, total_nodes
+    else
+        for move in sorted_moves
+            new_board = make_move(board, move)
+            score, _, nodes = alphabeta_ordered_bench(new_board, depth - 1, alpha, beta, true, pruning_strat)
+            total_nodes += nodes
+            if score < beta
+                beta = score
+                best_move = move
+            end
+            if beta <= alpha
+                break
+            end
+        end
+        return beta, best_move, total_nodes
+    end
 end
+
+# RUN BENCHMARK
+board = setup_benchmark_board()
+depth = 6
+# Strategies: 0=NONE, 1=LOSS, 2=RETREAT, 3=HUMAN
+
+t0 = time();
+_, _, n_bf = minimax_no_pruning_bench(board, depth, true);
+t_bf = time() - t0;
+t0 = time();
+_, _, n_smart = minimax_smart_bench(board, depth, true);
+t_smart = time() - t0;
+t0 = time();
+_, _, n_clever = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 0);
+t_clever = time() - t0;
+t0 = time();
+_, _, n_prag = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 1);
+t_prag = time() - t0;
+t0 = time();
+_, _, n_lazy = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 2);
+t_lazy = time() - t0;
+t0 = time();
+_, _, n_human = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 3);
+t_human = time() - t0;
+
+# OUTPUT
+println("| Algoritmus | Move Ordering | Alpha-Beta | 1v1 Term. | Pressure Term. | Beam Search | Čas (s) | Uzlů |")
+println("|---|:---:|:---:|:---:|:---:|:---:|---:|---:|")
+println("| Brute-force | | | | | | $(round(t_bf, digits=4)) | $n_bf |")
+println("| Smart | X | | | | | $(round(t_smart, digits=4)) | $n_smart |")
+println("| Clever (AB) | X | X | | | | $(round(t_clever, digits=4)) | $n_clever |")
+println("| Pragmatic | X | X | X | | | $(round(t_prag, digits=4)) | $n_prag |")
+println("| Lazy | X | X | X | X | | $(round(t_lazy, digits=4)) | $n_lazy |")
+println("| Human (Manual) | X | X | X | X | X | $(round(t_human, digits=4)) | $n_human |")
 ```
 
 ### Vysvětlivky k reportu
@@ -424,7 +544,7 @@ end
 ```{julia}
 #| label: summary-stats
 #| eval: true
-#| echo: true
+#| echo: false
 #| output: asis
 
 # ── Vypocet statistik z nactenych dat ────────────────────────────────
