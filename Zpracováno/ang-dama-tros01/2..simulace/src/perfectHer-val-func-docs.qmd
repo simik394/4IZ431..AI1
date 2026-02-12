@@ -247,66 +247,174 @@ println("\n> $result_str")
 
 \newpage
 
-## Prohledavaci stromy — prvnich 4 tahu
+## Prohledávací stromy — srovnání variant (hloubka 6)
 
 ```{julia}
-#| label: render-pragmatic-tree
+#| label: render-tree-text
 #| eval: true
 #| echo: false
 #| output: asis
 
-# ── Generování stromu pro Pragmatic variantu ─────────────────────────
-# Chceme vizualizovat pouze "manuální" simulaci = čistou vítěznou cestu
-# Použijeme nastavení 10,14 vs 1 a zapneme logování stromu s ořezáváním
+# ── SROVNÁVACÍ VIZUALIZACE (TEXT) ──────────────────────────────────────
+# Všechny varianty běží na hloubce 6 (zadání).
+# Výstup: textový DOT zdroj stromů.
+#   1. Alpha-Beta (PRUNE_NONE)         — ilustrativní (hloubka 3)
+#   2. Pragmatic  (PRUNE_LOSS_OF_PIECE)— ilustrativní (hloubka 3)
+#   3. Lazy       (PRUNE_RETREAT)      — ilustrativní (hloubka 4)
+#   4. Human      (PRUNE_HUMAN)        — KOMPLETNÍ hloubka 6
 
-# Suppress debug output from includes and calculation
-redirect_stdio(stdout=devnull) do
-    # Setup
+redirect_stdio(stdout=devnull, stderr=devnull) do
     include(joinpath(cur_doc_dir, "testvaluefunc.jl"))
-    
-    # Inline setup to avoid World Age issues
-    board = zeros(Int, 8, 8)
-    # We use invokelatest for notation_to_position just in case needed, but usually inline is fine if included
-    # actually, purely inline might still have issues if include happens in same block.
-    # But let's try direct calls.
-    p10 = Base.invokelatest(notation_to_position, 10)
-    board[p10.r, p10.c] = WHITE_KING
-    p14 = Base.invokelatest(notation_to_position, 14)
-    board[p14.r, p14.c] = WHITE_KING
-    p1 = Base.invokelatest(notation_to_position, 1)
-    board[p1.r, p1.c] = RED_KING
 
-    # Spuštění s logováním
-    global tree_nodes = TreeNode[]
-    global tree_enabled = true
-    global node_counter = 0
+    function get_bench_board()
+        board = zeros(Int, 8, 8)
+        p10 = Base.invokelatest(notation_to_position, 10)
+        board[p10.r, p10.c] = WHITE_KING
+        p14 = Base.invokelatest(notation_to_position, 14)
+        board[p14.r, p14.c] = WHITE_KING
+        p1 = Base.invokelatest(notation_to_position, 1)
+        board[p1.r, p1.c] = RED_KING
+        return board
+    end
 
-    # Použijeme minimax_with_tree s PRUNE_HUMAN (3) - Beam Search K=2
-    # To zajistí malý, čitelný strom (~13 uzlů) pro vizualizaci principu
-    # Note: We must pass the Enum type, not just Int
-    Base.invokelatest(minimax_with_tree, board, 6, -Inf, Inf, true, 0, "Start"; pruning=PruningStrategy(3))
+    # Textový export stromu (indentovaný, čitelný)
+    function tree_to_text(nodes, max_display_depth::Int, total_depth::Int)
+        if isempty(nodes)
+            return "  (prázdný strom)\n"
+        end
 
-    # Export do DOT
-    tree_out_dir = joinpath(cur_doc_dir, "..", "out", "rendered_trees", "pragmatic")
-    mkpath(tree_out_dir)
-    dot_file = joinpath(tree_out_dir, "manual_sim.dot")
+        tree_max_depth = maximum(n.depth for n in nodes)
+        min_depth = tree_max_depth - max_display_depth
 
-    # Využijeme funkci z testvaluefunc.jl
-    Base.invokelatest(export_tree_to_dot, dot_file)
+        visible = filter(n -> n.depth >= min_depth, nodes)
+        visible_ids = Set(n.id for n in visible)
 
-    # Vykreslení
-    png_file = joinpath(tree_out_dir, "manual_sim.png")
-    run(`dot -Tpng -Gsize=10,6! $dot_file -o $png_file`)
+        # Najdi kořeny (uzly bez rodiče ve visible)
+        all_children = Set{Int}()
+        for n in visible
+            for c in n.children
+                if c in visible_ids
+                    push!(all_children, c)
+                end
+            end
+        end
+
+        # Rekurzivní výpis
+        buf = IOBuffer()
+        function print_subtree(node_id, indent)
+            node = nothing
+            for n in visible
+                if n.id == node_id
+                    node = n
+                    break
+                end
+            end
+            node === nothing && return
+
+            prefix = "  " ^ indent
+            player = node.is_max ? "MAX" : "MIN"
+            prune = node.is_pruned ? " [PRUNED]" : ""
+            println(buf, prefix, "├─ ", node.move_str, " (", player,
+                    ") score=", round(node.score, digits=1),
+                    " α=", round(node.alpha, digits=1),
+                    " β=", round(node.beta, digits=1), prune)
+
+            for child_id in node.children
+                if child_id in visible_ids
+                    print_subtree(child_id, indent + 1)
+                end
+            end
+        end
+
+        roots = [n.id for n in visible if !(n.id in all_children)]
+        for rid in roots
+            print_subtree(rid, 0)
+        end
+        return String(take!(buf))
+    end
+
+    function generate_text_tree(strat_int, depth, display_depth)
+        board = get_bench_board()
+        global tree_nodes = TreeNode[]
+        global tree_enabled = true
+        global node_counter = 0
+
+        strat = Base.invokelatest(PruningStrategy, strat_int)
+        Base.invokelatest(minimax_with_tree, board, depth, -Inf, Inf, true, 0, "Start"; pruning=strat)
+
+        total = length(tree_nodes)
+        text = tree_to_text(tree_nodes, display_depth, depth)
+
+        # Také exportuj DOT pro pozdější renderování
+        out_dir = joinpath(cur_doc_dir, "..", "out", "rendered_trees")
+        return (total, text)
+    end
+
+    # ── Generování stromů ─────────────────────────────────────────────
+    # Všechny na hloubce 6
+    global res_ab    = generate_text_tree(0, 6, 3)   # Alpha-Beta: illustr. hl. 3
+    global res_prag  = generate_text_tree(1, 6, 3)   # Pragmatic:  illustr. hl. 3
+    global res_lazy  = generate_text_tree(2, 6, 4)   # Lazy:       illustr. hl. 4
+    global res_human = generate_text_tree(3, 6, 6)   # Human:      KOMPLETNÍ hl. 6
 end
 
-# Zobrazení
-tree_out_dir = joinpath(cur_doc_dir, "..", "out", "rendered_trees", "pragmatic")
-png_file = joinpath(tree_out_dir, "manual_sim.png")
+# ── Výstup ────────────────────────────────────────────────────────────
 
-println("### Vizualizace rozhodování (Human/Manual Logic)\n")
-println("Tento strom ukazuje **pouze** větve, které algoritmus reálně musel vyhodnotit (po aplikaci Alpha-Beta a 'Human' ořezání).")
-println("Z původních 2000+ uzlů (Brute Force) zbylo jen **$(length(tree_nodes))**, což odpovídá lidské 'manuální' kontrole - ignorujeme vše, co vede k okamžité ztrátě.")
-println("\n![Human Tree (Manual Logic View)]($(relpath(png_file, cur_doc_dir))){width=90%}\n")
+println("### Srovnání prořezávacích strategií (všechny hloubka 6)")
+println()
+println("Počáteční pozice: **W@10, W@14, R@1** (2 bílí králové vs 1 červený král).")
+println("Všechny varianty hledají do hloubky **6** (3 tahy každého hráče).")
+println("Textové stromy níže slouží k validaci obsahu — vizuální renderování bude v další iteraci.")
+println()
+
+println("---")
+println()
+
+println("### 1. Alpha-Beta — hrubá síla (PRUNE_NONE), ~$(res_ab[1]) uzlů")
+println()
+println("Ilustrativní zobrazení (horní 3 úrovně z 6):")
+println()
+println("```")
+println(res_ab[2])
+println("```")
+
+println()
+println("---")
+println()
+
+println("### 2. Pragmatic — ztráta figury (PRUNE_LOSS_OF_PIECE), ~$(res_prag[1]) uzlů")
+println()
+println("Ilustrativní zobrazení (horní 3 úrovně z 6):")
+println()
+println("```")
+println(res_prag[2])
+println("```")
+
+println()
+println("---")
+println()
+
+println("### 3. Lazy — trestání ústupu (PRUNE_RETREAT), ~$(res_lazy[1]) uzlů")
+println()
+println("Ilustrativní zobrazení (horní 4 úrovně z 6):")
+println()
+println("```")
+println(res_lazy[2])
+println("```")
+
+println()
+println("---")
+println()
+
+println("### 4. Human — beam search K=2 (PRUNE_HUMAN), ~$(res_human[1]) uzlů")
+println()
+println("**Kompletní** postup prohledávání do hloubky 6 (nejpřísnější varianta):")
+println()
+println("```")
+println(res_human[2])
+println("```")
+
+println()
 ```
 
 \newpage
