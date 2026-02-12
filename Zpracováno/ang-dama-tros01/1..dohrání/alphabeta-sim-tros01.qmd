@@ -20,7 +20,8 @@ Cílem bylo postavit agenta, který nejen že vyhraje, ale vyhraje **efektivně*
 Na titulním obrázku (Obrázek `\ref{fig-assignment}`{=latex}) je vidět, jak ten můj "mozek" vlastně přemýšlí. Je to klasický Minimax s Alpha-Beta ořezáváním, ale v praxi to vypadá spíš jako prohledávání obrovského stromu možností:
 - **MAX uzly**: To jsem já, snažím se urvat co nejvíc bodů.
 - **MIN uzly**: To je soupeř, snaží se mi to zkazit.
-- **Ořezávání (Pruning)**: To jsou ty šedé větve. Vizualizovat celý strom bez prořezání by v tomhle měřítku nedávalo smysl – byl by to jen jeden velký nepřehledný "blob". Ukazujeme jen to, co je relevantní po ořezání, abychom viděli tu efektivitu v praxi.
+- **Ořezávání (Pruning)**: To jsou ty šedé větve. Vizualizovat celý strom bez prořezání by v tomhle měřítku nedávalo smysl – jak ukazují moje testy (`tests.md`), i pro jednoduché stavy generuje hrubá síla tisíce uzlů (např. 2090 vs 0 pro manuální cestu). Byl by to jen jeden velký nepřehledný "blob".
+- **Minimalizace**: Proto zde ukazuji **pouze nezbytné minimum** – kritickou cestu (Principal Variation), kterou jsem identifikoval během manuální analýzy jako vítěznou. Vše ostatní je šum, který nás v tuto chvíli nezajímá. Neukazujeme "prohledávání", ukazujeme "řešení".
 
 ## Klíčové momenty a Strategie
 
@@ -67,6 +68,11 @@ w_{mat} \cdot (N_{my} - N_{opp}) & \text{jinak}
 \end{cases}
 $$
 
+#### Analýza limitů a extrémů
+- **Extrém (Loss Condition):** Pokud $N_{my} \to 1$, funkce okamžitě padá do $-\infty$. Toto není soft-limit, ale hard-constraint. Algoritmus raději obětuje cokoliv jiného, než aby dopustil tento stav.
+- **Běžný stav:** V drtivé většině času je hodnota konstantní ($300+300-300 = 300$). Materiál v koncovce 2v1 nerozhoduje, rozhoduje pozice.
+
+
 #### Implementace
 ```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_1v1" dedent="true"}
 ```
@@ -95,6 +101,12 @@ Zavedli jsme koncept "optimální vzdálenosti". Pokud jsou naši králové př�
 Heuristika uděluje bonus $w_{coord}$, pokud:
 $$ 2 \le dist(K_1, K_2) \le 4 $$
 
+#### Analýza limitů a extrémů
+- **Dolní extrém ($dist < 2$):** Pokud se králové "lepí" na sebe ($dist=1$), překážejí si v pohybu. Funkce toto penalizuje, protože efektivní útok vyžaduje, aby jeden král mohl obejít druhého.
+- **Horní extrém ($dist > 6$):** Pokud jsou od sebe přes celou desku, nemohou vytvořit síť. Soupeř snadno proklouzne mezi nimi.
+- **Optimum ($dist \in [2,4]$):** "Sweet spot". Králové jsou dost blízko na podporu, ale dost daleko na to, aby pokryli šířku desky.
+
+
 #### Implementace
 ```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_coordination" dedent="true"}
 ```
@@ -106,6 +118,13 @@ Vytvořit formaci, ze které není úniku.
 
 #### Diskuze
 Toto je nejpokročilejší část heuristiky. Detekujeme, který král je blíže k rohu ("Kotva") a od druhého ("Operátor") vyžadujeme, aby se pohyboval po diagonále **směrem od rohu**, čímž uzavírá síť. Bez této složky by agent soupeře jen "honil" kolem dokola.
+
+#### Geometrická definice
+Síť je definována vektorem mezi Kotvou ($K_A$) a Operátorem ($K_O$).
+- **Podmínka:** $K_O$ musí ležet na diagonále $d$, která je kolmá na spojnici $K_A \to Roh$.
+- **Extrém:** Pokud se $K_O$ přiblíží k rohu ($dist(K_O, Roh) \to 0$), síť kolabuje ("Crowding").
+- **Cíl:** Maximalizovat $dist(K_O, Roh)$ při zachování diagonální vazby. Tím se síť roztahuje a vytlačuje soupeře.
+
 
 #### Implementace
 ```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_net" dedent="true"}

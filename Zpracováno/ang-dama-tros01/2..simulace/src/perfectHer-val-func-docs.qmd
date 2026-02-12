@@ -250,51 +250,54 @@ println("\n> $result_str")
 ## Prohledavaci stromy — prvnich 4 tahu
 
 ```{julia}
-#| label: render-trees
+#| label: render-pragmatic-tree
 #| eval: true
 #| echo: true
 #| output: asis
 
-# ── Renderovani prohledavacich stromu do grafu ───────────────────────
-include(joinpath(cur_doc_dir, "render_search_trees.jl"))
+# ── Generování stromu pro Pragmatic variantu ─────────────────────────
+# Chceme vizualizovat pouze "manuální" simulaci = čistou vítěznou cestu
+# Použijeme nastavení 10,14 vs 1 a zapneme logování stromu s ořezáváním
 
-# Vystupni adresar pro renderovane stromy
-tree_out_dir = joinpath(cur_doc_dir, "..", "out", "rendered_trees")
-mkpath(tree_out_dir)
-
-# Mapovani tahu na adresare simulace
-tah_specs = [
-    (title="Tah 1: Bily 14-9 (MAX)", subdir="tah_1_bily", fname="tah1_bily"),
-    (title="Tah 2: Cerveny 1-5 (MIN)", subdir="tah_1_cerveny", fname="tah2_cerveny"),
-    (title="Tah 3: Bily 10-14 (MAX)", subdir="tah_2_bily", fname="tah3_bily"),
-    (title="Tah 4: Cerveny 5-1 (MIN)", subdir="tah_2_cerveny", fname="tah4_cerveny"),
-]
-
-for spec in tah_specs
-    out_base = joinpath(tree_out_dir, spec.fname)
-
-    # Použijeme split render pro lepší čitelnost
-    pdf_files = render_split_tree(active_run_path, spec.subdir, spec.title, out_base; max_depth=3)
-
-    if !isempty(pdf_files)
-        println("### $(spec.title)\n")
-
-        # První je vždy overview
-        ov_rel = relpath(pdf_files[1], cur_doc_dir)
-        println("#### Přehled alternativ\n")
-        println("![$(spec.title) - Přehled]($ov_rel){width=100%}\n")
-
-        # Ostatní jsou větve
-        if length(pdf_files) > 1
-            println("#### Detailní pohled na větve\n")
-            for (i, branch_pdf) in enumerate(pdf_files[2:end])
-                branch_rel = relpath(branch_pdf, cur_doc_dir)
-                println("![$(spec.title) - Větev $i]($branch_rel){width=100%}\n")
-            end
-        end
-        println("\\newpage\n")
-    end
+# Setup
+include(joinpath(cur_doc_dir, "testvaluefunc.jl"))
+board = setup_benchmark_board() # Použijeme funkci definovanou v předchozím bloku (nutno zajistit pořadí)
+# Nebo ji znova definujeme pro jistotu, pokud bloky nesdílí scope (Quarto usually shares but depends on config)
+function setup_viz_board()
+    board = zeros(Int, 8, 8)
+    p10 = notation_to_position(10); board[p10.r, p10.c] = WHITE_KING
+    p14 = notation_to_position(14); board[p14.r, p14.c] = WHITE_KING
+    p1 = notation_to_position(1);   board[p1.r, p1.c] = RED_KING
+    return board
 end
+
+board = setup_viz_board()
+
+# Spuštění s logováním
+global tree_nodes = TreeNode[]
+global tree_enabled = true
+global node_counter = 0
+
+# Použijeme minimax_with_tree s PRUNE_LOSS_OF_PIECE (Pragmatic)
+minimax_with_tree(board, 6, -Inf, Inf, true, 0, "Start"; pruning=PRUNE_LOSS_OF_PIECE)
+
+# Export do DOT
+tree_out_dir = joinpath(cur_doc_dir, "..", "out", "rendered_trees", "pragmatic")
+mkpath(tree_out_dir)
+dot_file = joinpath(tree_out_dir, "manual_sim.dot")
+
+# Využijeme funkci z testvaluefunc.jl
+export_tree_to_dot(dot_file)
+
+# Vykreslení
+png_file = joinpath(tree_out_dir, "manual_sim.png")
+run(`dot -Tpng $dot_file -o $png_file`)
+
+# Zobrazení
+println("### Vizualizace rozhodování (Pragmatic/Manual Logic)\n")
+println("Tento strom ukazuje **pouze** větve, které algoritmus reálně musel vyhodnotit (po aplikaci Alpha-Beta a 'Loss of Piece' ořezání).")
+println("Z původních 2000+ uzlů (Brute Force) zbylo jen **$(length(tree_nodes))**, což odpovídá lidské 'manuální' kontrole - ignorujeme vše, co vede k okamžité ztrátě.")
+println("\n![Pragmatic Tree (Minimalist View)]($(relpath(png_file, cur_doc_dir))){width=100%}\n")
 ```
 
 \newpage
