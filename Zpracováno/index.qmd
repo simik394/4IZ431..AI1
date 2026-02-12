@@ -1,25 +1,26 @@
 # Úvod
 
-Tato seminární práce pro předmět **4IZ431 - Algoritmy umělé inteligence** se skládá ze dvou částí, které demonstrují aplikaci prohledávacích algoritmů v multiagentním prostředí.
+Předmět **4IZ431 - Algoritmy umělé inteligence** pro mě nebyl jen o tom "splnit a zapomenout". Bylo to spíš o tom přestat se těch algoritmů bát a začít je chápat v praxi. Tahle práce shrnuje dva hlavní projekty, na kterých jsem si vyzkoušel, jak teorie vypadá, když se potká s realitou (a s autograderem).
 
-## Struktura práce
+## Co zde najdete?
 
-### Část 1: Pacman Multiagent (Warm-up)
-Úvodní část práce se zaměřuje na implementaci agentů pro hru Pacman v prostředí UC Berkeley AI. Cílem této "zahřívací" fáze bylo ověřit základní pochopení algoritmů:
-- **Reflex Agent**: Jednoduché reaktivní chování.
-- **Minimax**: Základní prohledávání herního stromu.
-- **Alpha-Beta Pruning**: Optimalizace prohledávání.
-- **Expectimax**: Probabilistické rozhodování proti náhodným duchům.
+### 1. Pacman Multiagent (The Warm-up)
+Začátek semestru a taková "povinná jízda". Implementace agentů pro Pacmana v prostředí UC Berkeley. Cílem bylo hlavně pochopit základy a **procitit to se 100% skóre** v autograderu:
+- **Reflex Agent**: Aby to do ničeho nenarazilo.
+- **Minimax**: Aby to nehrálo úplně náhodně.
+- **Alpha-Beta**: Aby to nehrálo *pomalu*.
+- **Expectimax**: Aby to přežilo i proti duchům, co hrají jak po lobotomii (náhodně).
 
-Tato část byla zpracována s důrazem na **100% splnění autograder testů** a efektivitu implementace.
+Bylo to fajn na rozjezd, ale ta pravá zábava (a frustrace) přišla až potom.
 
-### Část 2: Anglická Dáma (Main Event)
-Hlavní část práce se věnuje komplexní analýze koncovky v Anglické dámě (Checkers). Zde je prezentováno hlubší zkoumání problematiky:
-- **Návrh stavového prostoru**: Reprezentace herního plánu a tahů.
-- **Endgame Heuristiky**: Ladění hodnotící funkce pro specifické koncovky (2 králové vs 1 král).
-- **Simulace**: Analýza úspěšnosti strategií (např. "Double Corner" strategie).
-- **Vizualizace**: Generování prohledávacích stromů a statistik.
+### 2. Anglická Dáma (The Real Deal)
+Tohle už byla jiná liga. Dostali jsme za úkol nejen "nějak" hrát dámu, ale zaměřit se na specifickou koncovku. A to konkrétně situaci, kdy máte dva krále proti jednomu a musíte vyhrát. Zní to jednoduše? Taky jsem si to myslel.
+Zde jdu mnohem víc do hloubky:
+- Jak reprezentovat stav, aby se v tom dalo vyznat.
+- **Ladění heuristik**: Proč "čím blíž, tím líp" prostě nestačí.
+- **Simulace**: Hromada pokusů o to, jak donutit soupeře vlézt do pasti.
+- A taky trochu vizualizace, protože dívat se jen na logy v terminálu je cesta k šílenství.
 
-Cílem této části bylo nejen implementovat funkčního agenta, ale především detailně analyzovat jeho rozhodovací proces a optimalizovat jeho strategii pro konkrétní scénáře.
+Tato část reportu je mnohem detailnější, protože jsem nad ní strávil násobně víc času a nervů. Ale výsledek snad stojí za to.
 
 

@@ -2,9 +2,10 @@
 title: "Úvod"
 ---
 
-Tento dokument sjednocuje dvě klíčové fáze řešení semestrální práce do předmětu 4IZ431:
+Tato sekce by měla sloužit jako takový "hub" pro všechno, co se týká té složitější části semestru - Anglické dámy.
 
-1. **Manuální dohrání**: Analýza a vizualizace koncovky.
-2. **Simulace**: Ladění a verifikace evaluační funkce.
+Zahrnuje to dvě hlavní fáze mého (mírně zoufalého) snažení:
+1. **Manuální dohrání**: Kdy jsem se snažil pochopit, jak sakra donutit mého agenta, aby tu hru vůbec chtěl vyhrát.
+2. **Simulace**: Kde jsem ladil čísla v heuristické funkci tak dlouho, dokud to nezačalo fungovat.
 
-Obě části jsou integrovány do jedné knihy pro snadnou navigaci a kontext.
+Je to všechno pohromadě v jednom dokumentu, aby se v tom dalo nějak rozumně orientovat.

@@ -11,38 +11,45 @@ jupyter: julia-1.12
 ---
 {{<pagebreak>}}
 
-# Manuální dohrání a Analýza koncovky
+Tohle je ta část, kde to začalo být zajímavé. A taky frustrující. Měl jsem za úkol vyřešit koncovku **2 králové proti 1 králi**. Zní to jako jasná věc, ne? Máte přesilu, prostě ho umlátíte. Jenže donutit deterministický algoritmus, aby soupeře skutečně *hnal* do rohu a ne jenom tančil kolem něj, se ukázalo jako docela solidní oříšek.
 
-Tato kapitola dokumentuje vývoj a ladění heuristické funkce pro koncovku **2 králové proti 1 králi**. Cílem bylo vytvořit agenta, který dokáže spolehlivě a efektivně (v minimálním počtu tahů) zvítězit proti optimálně hrajícímu soupeři.
+Cílem bylo postavit agenta, který nejen že vyhraje, ale vyhraje **efektivně** a spolehlivě. Žádné náhodné poťouchlosti, ale čistá strojová dominance.
 
 **Vizualizace herního stromu (Obrázek `\ref{fig-assignment}`{=latex} na titulní straně)**
 
-Obrázek na úvodní stránce ilustruje princip prohledávání herního prostoru pomocí algoritmu Minimax s Alpha-Beta ořezáváním:
-- **MAX uzly (Zelené/Fialové)**: Stavy, kde maximalizujeme naše skóre.
-- **MIN uzly (Červené/Azurové)**: Stavy, kde soupeř minimalizuje naše skóre.
-- **Ořezávání (Pruning)**: Šedé větve nebyly prozkoumány, protože algoritmus matematicky dokázal, že nemohou vylepšit výsledek.
+Na titulním obrázku (Obrázek `\ref{fig-assignment}`{=latex}) je vidět, jak ten můj "mozek" vlastně přemýšlí. Je to klasický Minimax s Alpha-Beta ořezáváním, ale v praxi to vypadá spíš jako prohledávání obrovského stromu možností:
+- **MAX uzly**: To jsem já, snažím se urvat co nejvíc bodů.
+- **MIN uzly**: To je soupeř, snaží se mi to zkazit.
+- **Ořezávání (Pruning)**: To jsou ty šedé větve. Vizualizovat celý strom bez prořezání by v tomhle měřítku nedávalo smysl – byl by to jen jeden velký nepřehledný "blob". Ukazujeme jen to, co je relevantní po ořezání, abychom viděli tu efektivitu v praxi.
 
 ## Klíčové momenty a Strategie
 
-V této sekci konsolidujeme uživatelské požadavky a pozorování z průběhu vývoje. Pro úspěšné dohrání partie je nutné pochopit dynamiku koncovky.
+Tady jsem sepsal věci, na které jsem přišel metodou pokus-omyl (hodně omylů). Abych tu hru dohrál, musel jsem pochopit, jak se ty kameny vlastně mají chovat.
+
+### Proč manuální simulace?
+Možná se ptáte, proč jsem prostě nepustil 10 000 automatických her a neanalyzoval logy. Odpověď je jednoduchá: **Intuice**.
+Když koukáte na logy ve formátu `Score: 4120, Move: 14-9`, nevidíte *proč* se to děje. Nevidíte tu frustraci, když agent sice neprohraje, ale 50 tahů jenom chodí tam a zpátky.
+Musel jsem si tu hru "ohmatat". Vzít figurky (nebo myš v simulátoru), zkusit hrát za toho "hloupého" soupeře a zjistit, kde má můj agent slabiny. Jedině tak jsem pochopil, že mi chybí koncept "pasti" nebo "kotvy".
 
 ### Strategické imperativy
 
-1.  **Zachování přesily (2:1)**: Absolutní prioritou je nedostat se do situace 1:1. Výměna krále za krále vede okamžitě k remíze.
-2.  **Vytlačení z centra**: Soupeřův král se snaží držet v centru (nejsilnější pozice). Naším cílem je vytlačit ho na okraj.
-3.  **Past (The Net)**: Samotné zatlačení nestačí. Je nutné vytvořit kooperativní formaci ("síť"), která soupeři postupně odebere všechny bezpečné tahy.
+1.  **2 na 1 je nutnost**: Přijít o jednoho krále znamená remízu. Game over. Takže výměny jsou absolutní tabu.
+2.  **Vytlačit z centra**: Soupeř se chce držet uprostřed (tam má nejvíc možností). Já ho musím narvat do rohu jak do pytle.
+3.  **Past (The Net)**: Nestačí ho jen tlačit. Musím kolem něj utáhnout smyčku. Spolupráce obou mých králů je klíčová.
 
 ### Role králů: Kotva a Operátor
 
-Během analýzy jsme identifikovali dělbu rolí mezi našimi králi, kterou heuristika musí podporovat:
--   **Kotva (Anchor)**: Drží klíčovou pozici (obvykle u rohu) a omezuje únikové cesty soupeře. Je statický.
--   **Operátor (Operator)**: Aktivně manévruje, zmenšuje prostor a připravuje finální útok.
+Tohle byl asi největší "aha moment". Moji králové nemůžou dělat to samé. Musí si rozdělit role:
+-   **Kotva (The Anchor)**: Jeden stojí a hlídá ústupovou cestu (kempí).
+-   **Operátor (The Operator)**: Druhý aktivně doráží a zmenšuje soupeři manévrovací prostor.
+
+Když se snažili oba dorážet najednou, akorát si překáželi.
 
 ***
 
 ## Detailní rozbor heuristiky (Periodic Blocks)
 
-V této části rozebíráme jednotlivé komponenty hodnotící funkce. Každá komponenta je prezentována ve struktuře: **Požadavek $\to$ Diskuze $\to$ Matematika $\to$ Implementace**.
+Tady rozeberu, jak jsem tyhle myšlenky přetavil do kódu. Každou část heuristiky jsem si musel obhájit, nasimulovat a vyladit.
 
 ### 1. Materiál a Bezpečnost (1v1 Protection)
 
@@ -216,5 +223,5 @@ Tato změna umožnila agentovi najít vítěznou sekvenci: `14-9` $\to$ `1-5` $\
 
 ***
 
-### Závěr k analýze
-Jakmile se podaří sestavit "síť" (princip #4), hra přechází do deterministické fáze. Heuristika v této chvíli dává tak vysoké skóre, že Alpha-Beta ořezávání eliminuje téměř všechny ostatní větve a agent hraje prakticky okamžitě.
+### Co si z toho odnést?
+Jakmile se podaří sestavit tu past ("síť"), je dobojováno. Heuristika pak dává tak jasná čísla, že Alpha-Beta ořeže skoro všechno a agent hraje bleskově. Ten pocit, když to konečně začalo fungovat a viděl jsem, jak červený král marně hledá únik, byl k nezaplacení.
