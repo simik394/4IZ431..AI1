@@ -171,28 +171,14 @@ Kricka optimalizace pro reseni horizon effectu:
 #| output: asis
 
 ## ── Nalezeni posledniho simulation runu ──────────────────────────────
-cur_doc_dir = pwd()  # Quarto nastavi CWD na adresar dokumentu
-
-# Robustni nalezeni project root (pro staged i source render)
-if basename(cur_doc_dir) == "staging_temp"
-    # Jsme v staging_temp (primo v root projektu)
-    project_root = dirname(cur_doc_dir)
-else
-    # Jsme v ang-dama-tros01/2..simulace/src/ (3 urovne hluboko)
-    project_root = joinpath(cur_doc_dir, "..", "..", "..")
-end
-
-sim_base_path = joinpath(project_root, "simulation_data")
-if !isdir(sim_base_path)
-    # Zkusime fallback do stareho umisteni (kdyby nahodou)
-    sim_base_path = joinpath(project_root, "out", "simulation_outputs")
-end
+# Absolutni cesta k simulation_data (robustni vuci CWD zmenam pri book renderu)
+sim_base_path = "/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/simulation_data"
 
 if !isdir(sim_base_path)
     println("⚠ CHYBA: Adresář s daty simulace nenalezen: $sim_base_path")
     # Vytvorime dummy run aby zbytek scriptu nespadl
     mkpath(joinpath(sim_base_path, "run_dummy"))
-    open(joinpath(sim_base_path, "run_dummy", "pruběh_simulace.txt"), "w") do f
+    open(joinpath(sim_base_path, "run_dummy", "průběh_simulace.txt"), "w") do f
         write(f, "Dummy simulation run\n")
     end
 end
@@ -201,7 +187,7 @@ run_dirs = filter(d -> startswith(d, "run_"), readdir(sim_base_path))
 if isempty(run_dirs)
     println("⚠ Žádné běhy simulace nenalezeny v $sim_base_path")
     mkpath(joinpath(sim_base_path, "run_dummy"))
-    open(joinpath(sim_base_path, "run_dummy", "pruběh_simulace.txt"), "w") do f
+    open(joinpath(sim_base_path, "run_dummy", "průběh_simulace.txt"), "w") do f
         write(f, "Dummy simulation run\n")
     end
     run_dirs = ["run_dummy"]
@@ -211,11 +197,13 @@ active_run_path = joinpath(sim_base_path, latest_run)
 println("**Zdrojovy run:** `$latest_run` (z `$sim_base_path`)\n")
 
 ## ── Parsovani pruběh_simulace.txt ────────────────────────────────────
-raw = read(joinpath(active_run_path, "pruběh_simulace.txt"), String)
+raw = read(joinpath(active_run_path, "průběh_simulace.txt"), String)
 lines = split(raw, "\n")
 
 ## Extrakce zadani
 for l in lines
+    # Match "Bílý: 3 královen na pozicích 10, 14, 15"
+    # Note: Regex must match unicode chars properly
     m_white = match(r"Bílý: (\d+) krákov?.* na pozicích ([\d, ]+)", l)
     m_red = match(r"Červený: (\d+) krákov?.* na pozici (\d+)", l)
     m_depth = match(r"Hloubka prohledávání: (\d+)", l)
@@ -326,7 +314,7 @@ println("\n> $result_str")
 ##   4. Human      (PRUNE_HUMAN)        — KOMPLETNÍ hloubka 6
 
 redirect_stdio(stdout=devnull, stderr=devnull) do
-    include(joinpath(cur_doc_dir, "testvaluefunc.jl"))
+    include("/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/testvaluefunc.jl")
 
     function get_bench_board()
         board = zeros(Int, 8, 8)
@@ -408,7 +396,7 @@ redirect_stdio(stdout=devnull, stderr=devnull) do
         text = tree_to_text(tree_nodes, display_depth, depth)
 
         # Také exportuj DOT pro pozdější renderování
-        out_dir = joinpath(cur_doc_dir, "..", "out", "rendered_trees")
+        out_dir = "/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/out/rendered_trees"
         return (total, text)
     end
 
@@ -493,7 +481,7 @@ V této sekci ověříme správnost Alpha-Beta ořezávání porovnáním s čis
 
 ## Load necessary modules if not already loaded
 if !isdefined(Main, :minimax_with_tree)
-    include(joinpath(cur_doc_dir, "testvaluefunc.jl"))
+    include("/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/testvaluefunc.jl")
 end
 
 ## Define Benchmark Functions (Locally to ensure they exist for this doc)
@@ -771,7 +759,7 @@ Pro produkční nasazení je `perfect_endgame_heuristic` jednoznačně doporuče
 #| output: asis
 
 ## Load log file
-log_path = joinpath(cur_doc_dir, "..", "out", "verification", "verification_log.txt")
+log_path = "/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/out/verification/verification_log.txt"
 
 if isfile(log_path)
     lines = readlines(log_path)
