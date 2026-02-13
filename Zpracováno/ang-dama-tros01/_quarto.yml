@@ -5,8 +5,6 @@ project:
 execute:
   freeze: auto
 
-
-
 book:
   title: "Anglická dáma - Analýza koncovky"
   author: "AI1 Projekt"
