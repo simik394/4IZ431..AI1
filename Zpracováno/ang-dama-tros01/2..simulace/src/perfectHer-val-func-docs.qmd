@@ -12,147 +12,117 @@ execute:
 
 \newpage
 
-## Uvod
+# Uvod
 
-### Charakteristika
+## Charakteristika
 
 `perfect_endgame_heuristic` je **obecna principialni** heuristika postavena na 7 strategickych principech:
 
 | # | Princip | Popis |
 |---|---------|-------|
-| 1 | Material | Základní hodnota figur a 1v1 ochrana |
-| 2 | Red Position | Viditelnost pozice červeného (Penalty/Bonus) |
-| 3 | Coordination | Squeeze formace (Vytlačení z prostoru) |
-| 4 | Retreat Penalty | Pseudo-terminální stavy (Zákaz pasivity) |
-| 5 | Net Formation | Diagonální síť (Spolupráce králů) |
-| 6 | Mobility | Omezení tahů soupeře |
-| 7 | Cornering | Tlak k okrajům (Kontrola hry) |
-| 8 | Corner Control | Kontextově závislé řízení rohu |
-
-> **Poznámka k principům:** Ačkoliv tabulka uvádí 8 bodů, v implementaci jsou některé principy (např. 7 a 8) úzce provázány a sdílejí logiku. Číslování sekcí níže odpovídá logickým blokům kódu.
+| 1 | Material | Zakladni hodnota figur a 1v1 ochrana |
+| 2 | Red Position | Viditelnost pozice cerveneho |
+| 3 | Coordination | Squeeze formace |
+| 4 | Retreat Penalty | Pseudo-terminalni stavy |
+| 5 | Net Formation | Diagonalni spread operatora |
+| 6 | Mobility | Omezeni tahu soupere |
+| 7 | Cornering | Tlak k okrajum |
+| 8 | Corner Control | Kontextove zavisle rizeni rohu |
 
 > **Pristup:** Zadne hardcoded pozice - pouze obecne principy.
 
-### Silne stranky
+## Silne stranky
 
 - Obecna - funguje z libovolne startovni pozice
 - Kontextove zavisle - bonus se meni podle faze hry
 - Robustni vuci horizon effectu (depth 5 i 6)
 - Move ordering pro lepsí pruning
 
-### Klicova inovace
+## Klicova inovace
 
 1. **Anchor vs Operator** - rozliseni roli kralu
-4. **Pseudo-terminální stavy** - Stavy, které nejsou podle pravidel prohra (MAT), ale heuristika je tak tvrdě penalizuje (např. ústup do pole), že se jim agent vyhne jako čert kříži. Umožňuje to "oříznout" větve, které by vedly jen k plýtvání časem.
+2. **Pseudo-terminalni stavy** - penalta za zbytecny ustup
 3. **Move ordering** - serazeni tahu pred minimax
 
 \newpage
 
-## Implementace - Klicove sekce
+# Implementace - Klicove sekce
 
 ::: {.callout-note}
 Vsechny ukázky kódu níže jsou **embedy** ze souboru `heuristics.jl`. 
 Pri zmene zdrojoveho kodu se dokumentace automaticky aktualizuje.
 :::
 
-### PRINCIP 1: Material a 1v1 ochrana
+## PRINCIP 1: Material a 1v1 ochrana
 
-```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_material" dedent="true"}
+```{.julia include="heuristics.jl" region="perfect_material"}
 ```
 
-```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_1v1" dedent="true"}
+```{.julia include="heuristics.jl" region="perfect_1v1"}
 ```
 
-> **Rozdíl od Optimal:** `optimal` používá penaltu -2000, `perfect` používá **hard forbidden** -99999.
->
-> *Vysvětlení:* "Hard forbidden" zde neznamená hardcoded pozici (např. "pokud jsi na E5, prohrál jsi"), ale **logické pravidlo**. 1v1 je teoretická remíza, což je pro nás prohra. Proto tento stav považujeme za "zakázaný" stejně jako skok do propasti.
+> **Rozdil od Optimal:** `optimal` pouziva penaltu -2000, `perfect` pouziva hard forbidden -99999.
 
-### PRINCIP 2: Pozice cerveneho
+## PRINCIP 2: Pozice cerveneho
 
-```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_red_pos" dedent="true"}
+```{.julia include="heuristics.jl" region="perfect_red_pos"}
 ```
-
-1. Penalta: Červený král v bezpečné zóně (dvojitý roh) — heuristika *chce*, aby se soupeř pohnul.
-2. Bonus: Červený je mimo bezpečí — indikátor úspěšného vytlačení.
 
 > **Klicovy rozdil:** Pozice cerveneho je primo viditelna v hodnote - penalta I bonus.
 
-### PRINCIP 3: Koordinovany utok (Squeeze)
+## PRINCIP 3: Koordinovany utok (Squeeze)
 
-```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_coordination" dedent="true"}
+```{.julia include="heuristics.jl" region="perfect_coordination"}
 ```
-
-1. Bonus za koordinaci králů ve vzdálenosti 2–6 polí (sweet spot).
-2. Sevření (Squeeze) — bonus roste s klesající průměrnou vzdáleností k soupeři.
-
-> **Definice "Squeeze":** "Squeeze" (sevření) není jen o nedostatku tahů. Je to geometrická formace, kde naši králové omezují pohyb soupeře tím, že kontrolují klíčové diagonály kolem něj. Čím blíže jsou naši králové k soupeři (při zachování bezpečné vzdálenosti), tím vyšší "Squeeze" bonus.
 
 \newpage
 
-### PRINCIP 4: Penalta za zbytecny ustup
+## PRINCIP 4: Penalta za zbytecny ustup
 
-```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_retreat" dedent="true"}
+```{.julia include="heuristics.jl" region="perfect_retreat"}
 ```
-
-1. Tvrdá penalta: oba králové příliš daleko (`avg_dist > 5`) — promarněná příležitost.
-2. Střední penalta: vzdálenost nad 4 — agent ztrácí tlak.
-3. Penalta za nejbližšího krále stále daleko — špatná pozice.
 
 > **Toto zamezuje hre na cas** - bily se nemuze utahovat do nekonecna.
 
-### PRINCIP 5: Diagonalni sitova formace (Net)
+## PRINCIP 5: Diagonalni sitova formace (Net)
 
 Kracive logika - rozliseni **kotvy** a **operatora**:
 
-```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_net" dedent="true"}
+```{.julia include="heuristics.jl" region="perfect_net"}
 ```
 
-1. Net bonus: Operátor je na správné diagonále (row ≥ 3, col ≥ 4) — síť je roztažená.
-2. Crowding penalta: Operátor příliš blízko rohu — králové si překáží.
-
-> **Klíčová inovace - Kotva a Operátor:**
->
-> Algoritmus dynamicky určuje role králů:
-> 1.  Vypočítá vzdálenost obou králů od klíčového rohu.
-> 2.  Král, který je **blíž**, se stává **Kotvou** (Anchor) - jeho úkolem je držet roh/bariéru.
-> 3.  Druhý král je **Operátor** - ten musí "operovat" v prostoru (diagonálně), aby soupeře nadběhl.
->
-> *Proč 14-18?* Tah `14-18` je vyvrcholením této strategie v koncovce. Zatímco tah `14-9` (viz Regrese) byl nutný pro *přiblížení* (Approach fáze), tah `14-18` je nutný pro *uzavření sítě* (Net fáze). Operátor tím odřízne červenému ústupovou cestu.
+> **Toto je klicova inovace** - jakmile kotva drzi roh, operator MUSI jit diagonalne (14→18), ne k rohu (14→10).
 
 \newpage
 
-### PRINCIP 6: Mobilita soupeře
+## PRINCIP 6: Mobilita soupeře
 
 Čím méně tahů má červený, tím lépe. 0 tahů = výhra.
 
-```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_mobility" dedent="true"}
+```{.julia include="heuristics.jl" region="perfect_mobility"}
 ```
 
-### PRINCIP 7: Cornering (Tlak k okrajům)
+## PRINCIP 7: Cornering (Tlak k okrajům)
 
 Tlačení červeného k okrajům desky ("Kontrola hry").
 
-> **Metrika vzdálenosti:** Zde se klíčově uplatňuje **Čebyševova vzdálenost** (max(|dx|, |dy|)), která správně měří vzdálenost v počtu tahů krále (včetně diagonálního pohybu), na rozdíl od nevhodné Manhattanské metriky.
-
-```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_cornering" dedent="true"}
+```{.julia include="heuristics.jl" region="perfect_cornering"}
 ```
 
-### PRINCIP 8: Kontextove zavisle rizeni rohu
+## PRINCIP 8: Kontextove zavisle rizeni rohu
 
-```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_corner_control" dedent="true"}
+```{.julia include="heuristics.jl" region="perfect_corner_control"}
 ```
 
-> **Kontextová závislost:** Bonus za roh se uděluje POUZE tehdy, když je tam místo (nikdo tam není). Tím se řeší konflikt s principem "Crowding" (Přeplnění).
->
-> *Poznámka k hloubce 6:* Celá heuristika je laděna pro hloubku prohledávání 6 (3 tahy bílý, 3 tahy červený). Tato hloubka byla zvolena jako kompromis: je dostatečná, aby agent "viděl" důsledky svých taktických manévrů (např. přípravu na Squeeze), ale zároveň výpočetně zvládnutelná v reálném čase. Hloubka 5 by byla příliš mělká (Horizon effect by skryl pasti), hloubka 7+ exponenciálně náročnější bez zásadního zisku v této koncovce.
+> **Kontextova zavislost** - bonus za roh POUZE kdyz tam jeste nikdo neni.
 
 \newpage
 
-## Move Ordering
+# Move Ordering
 
 Kricka optimalizace pro reseni horizon effectu:
 
-```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/testvaluefunc.jl" region="move_ordering" dedent="true"}
+```{.julia include="testvaluefunc.jl" region="move_ordering"}
 ```
 
 **Vyhody:**
@@ -162,7 +132,7 @@ Kricka optimalizace pro reseni horizon effectu:
 
 \newpage
 
-## Validace
+# Validace
 
 ```{julia}
 #| label: load-simulation-data
@@ -170,40 +140,20 @@ Kricka optimalizace pro reseni horizon effectu:
 #| echo: false
 #| output: asis
 
-## ── Nalezeni posledniho simulation runu ──────────────────────────────
-# Absolutni cesta k simulation_data (robustni vuci CWD zmenam pri book renderu)
-sim_base_path = "/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/simulation_data"
-
-if !isdir(sim_base_path)
-    println("⚠ CHYBA: Adresář s daty simulace nenalezen: $sim_base_path")
-    # Vytvorime dummy run aby zbytek scriptu nespadl
-    mkpath(joinpath(sim_base_path, "run_dummy"))
-    open(joinpath(sim_base_path, "run_dummy", "průběh_simulace.txt"), "w") do f
-        write(f, "Dummy simulation run\n")
-    end
-end
-
+# ── Nalezeni posledniho simulation runu ──────────────────────────────
+cur_doc_dir = pwd()  # Quarto nastavi CWD na adresar dokumentu
+sim_base_path = joinpath(cur_doc_dir, "..", "out", "simulation_outputs")
 run_dirs = filter(d -> startswith(d, "run_"), readdir(sim_base_path))
-if isempty(run_dirs)
-    println("⚠ Žádné běhy simulace nenalezeny v $sim_base_path")
-    mkpath(joinpath(sim_base_path, "run_dummy"))
-    open(joinpath(sim_base_path, "run_dummy", "průběh_simulace.txt"), "w") do f
-        write(f, "Dummy simulation run\n")
-    end
-    run_dirs = ["run_dummy"]
-end
 latest_run = sort(run_dirs)[end]
 active_run_path = joinpath(sim_base_path, latest_run)
-println("**Zdrojovy run:** `$latest_run` (z `$sim_base_path`)\n")
+println("**Zdrojovy run:** `$latest_run`\n")
 
-## ── Parsovani pruběh_simulace.txt ────────────────────────────────────
-raw = read(joinpath(active_run_path, "průběh_simulace.txt"), String)
+# ── Parsovani pruběh_simulace.txt ────────────────────────────────────
+raw = read(joinpath(active_run_path, "pruběh_simulace.txt"), String)
 lines = split(raw, "\n")
 
-## Extrakce zadani
+# Extrakce zadani
 for l in lines
-    # Match "Bílý: 3 královen na pozicích 10, 14, 15"
-    # Note: Regex must match unicode chars properly
     m_white = match(r"Bílý: (\d+) krákov?.* na pozicích ([\d, ]+)", l)
     m_red = match(r"Červený: (\d+) krákov?.* na pozici (\d+)", l)
     m_depth = match(r"Hloubka prohledávání: (\d+)", l)
@@ -216,7 +166,7 @@ for l in lines
     end
 end
 
-## ── Extrakce dat jednotlivych tahu ───────────────────────────────────
+# ── Extrakce dat jednotlivych tahu ───────────────────────────────────
 struct MoveData
     num::Int
     player::String  # "Bily" / "Cerveny"
@@ -280,7 +230,7 @@ while i <= length(lines)
     end
 end
 
-## ── Detekce vysledku ─────────────────────────────────────────────────
+# ── Detekce vysledku ─────────────────────────────────────────────────
 result_line = findfirst(l -> occursin("VYHRÁL", l), lines)
 global result_str = result_line !== nothing ? strip(lines[result_line]) : "Hra neskoncila"
 
@@ -297,7 +247,7 @@ println("\n> $result_str")
 
 \newpage
 
-### Prohledávací stromy — srovnání variant (hloubka 6)
+## Prohledávací stromy — srovnání variant (hloubka 6)
 
 ```{julia}
 #| label: render-tree-text
@@ -305,16 +255,16 @@ println("\n> $result_str")
 #| echo: false
 #| output: asis
 
-## ── SROVNÁVACÍ VIZUALIZACE (TEXT) ──────────────────────────────────────
-## Všechny varianty běží na hloubce 6 (zadání).
-## Výstup: textový DOT zdroj stromů.
-##   1. Alpha-Beta (PRUNE_NONE)         — ilustrativní (hloubka 3)
-##   2. Pragmatic  (PRUNE_LOSS_OF_PIECE)— ilustrativní (hloubka 3)
-##   3. Lazy       (PRUNE_RETREAT)      — ilustrativní (hloubka 4)
-##   4. Human      (PRUNE_HUMAN)        — KOMPLETNÍ hloubka 6
+# ── SROVNÁVACÍ VIZUALIZACE (TEXT) ──────────────────────────────────────
+# Všechny varianty běží na hloubce 6 (zadání).
+# Výstup: textový DOT zdroj stromů.
+#   1. Alpha-Beta (PRUNE_NONE)         — ilustrativní (hloubka 3)
+#   2. Pragmatic  (PRUNE_LOSS_OF_PIECE)— ilustrativní (hloubka 3)
+#   3. Lazy       (PRUNE_RETREAT)      — ilustrativní (hloubka 4)
+#   4. Human      (PRUNE_HUMAN)        — KOMPLETNÍ hloubka 6
 
 redirect_stdio(stdout=devnull, stderr=devnull) do
-    include("/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/testvaluefunc.jl")
+    include(joinpath(cur_doc_dir, "testvaluefunc.jl"))
 
     function get_bench_board()
         board = zeros(Int, 8, 8)
@@ -396,7 +346,7 @@ redirect_stdio(stdout=devnull, stderr=devnull) do
         text = tree_to_text(tree_nodes, display_depth, depth)
 
         # Také exportuj DOT pro pozdější renderování
-        out_dir = "/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/out/rendered_trees"
+        out_dir = joinpath(cur_doc_dir, "..", "out", "rendered_trees")
         return (total, text)
     end
 
@@ -408,7 +358,7 @@ redirect_stdio(stdout=devnull, stderr=devnull) do
     global res_human = generate_text_tree(3, 6, 6)   # Human:      KOMPLETNÍ hl. 6
 end
 
-## ── Výstup ────────────────────────────────────────────────────────────
+# ── Výstup ────────────────────────────────────────────────────────────
 
 println("### Srovnání prořezávacích strategií (všechny hloubka 6)")
 println()
@@ -469,7 +419,7 @@ println()
 
 \newpage
 
-## Validace ořezávání (Brute Force vs Alpha-Beta)
+# Validace ořezávání (Brute Force vs Alpha-Beta)
 
 V této sekci ověříme správnost Alpha-Beta ořezávání porovnáním s čistým Minimax algoritmem (hrubá síla) na vybrané herní situaci. Oba algoritmy musí najít **stejnou hodnotu skóre** a **stejný nejlepší tah**. Rozdíl bude pouze v počtu prozkoumaných uzlů.
 
@@ -479,12 +429,12 @@ V této sekci ověříme správnost Alpha-Beta ořezávání porovnáním s čis
 #| echo: false
 #| output: asis
 
-## Load necessary modules if not already loaded
+# Load necessary modules if not already loaded
 if !isdefined(Main, :minimax_with_tree)
-    include("/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/testvaluefunc.jl")
+    include(joinpath(cur_doc_dir, "testvaluefunc.jl"))
 end
 
-## Define Benchmark Functions (Locally to ensure they exist for this doc)
+# Define Benchmark Functions (Locally to ensure they exist for this doc)
 function setup_benchmark_board()
     board = zeros(Int, 8, 8)
     p10 = notation_to_position(10)
@@ -496,7 +446,7 @@ function setup_benchmark_board()
     return board
 end
 
-## A. Brute-force: Minimax, No Pruning
+# A. Brute-force: Minimax, No Pruning
 function minimax_no_pruning_bench(board::Matrix{Int}, depth::Int, is_maximizing::Bool)
     if depth == 0
         return Float64(perfect_endgame_heuristic(board)), nothing, 1
@@ -536,7 +486,7 @@ function minimax_no_pruning_bench(board::Matrix{Int}, depth::Int, is_maximizing:
     end
 end
 
-## B. Smart: Minimax + Move Ordering
+# B. Smart: Minimax + Move Ordering
 function minimax_smart_bench(board, depth, is_maximizing)
     if depth == 0
         return Float64(perfect_endgame_heuristic(board)), nothing, 1
@@ -580,7 +530,7 @@ function minimax_smart_bench(board, depth, is_maximizing)
     end
 end
 
-## C-F. Alpha-Beta Variants
+# C-F. Alpha-Beta Variants
 function alphabeta_ordered_bench(board, depth, alpha, beta, is_max, pruning_strat)
     # 1. Pruning checks
     if pruning_strat == 1 || pruning_strat == 2 || pruning_strat == 3 # LOSS, RETREAT, HUMAN
@@ -653,10 +603,10 @@ function alphabeta_ordered_bench(board, depth, alpha, beta, is_max, pruning_stra
     end
 end
 
-## RUN BENCHMARK
+# RUN BENCHMARK
 board = setup_benchmark_board()
 depth = 6
-## Strategies: 0=NONE, 1=LOSS, 2=RETREAT, 3=HUMAN
+# Strategies: 0=NONE, 1=LOSS, 2=RETREAT, 3=HUMAN
 
 t0 = time();
 _, _, n_bf = minimax_no_pruning_bench(board, depth, true);
@@ -677,7 +627,7 @@ t0 = time();
 _, _, n_human = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 3);
 t_human = time() - t0;
 
-## OUTPUT
+# OUTPUT
 println("| Algoritmus | Move Ordering | Alpha-Beta | 1v1 Term. | Pressure Term. | Beam Search | Čas (s) | Uzlů |")
 println("|---|:---:|:---:|:---:|:---:|:---:|---:|---:|")
 println("| Brute-force | | | | | | $(round(t_bf, digits=4)) | $n_bf |")
@@ -688,7 +638,7 @@ println("| Lazy | X | X | X | X | | $(round(t_lazy, digits=4)) | $n_lazy |")
 println("| Human (Manual) | X | X | X | X | X | $(round(t_human, digits=4)) | $n_human |")
 ```
 
-#### Vysvětlivky k reportu
+### Vysvětlivky k reportu
 
 - **NO MOVES**: Pokud se ve stromu objeví uzel označený jako `[NO MOVES]`, znamená to, že hráč na tahu nemá k dispozici žádný legální tah. V dámě to znamená okamžitou prohru.
     - Pokud nemůže táhnout MAX (Bílý), skóre je $-\infty$.
@@ -697,7 +647,7 @@ println("| Human (Manual) | X | X | X | X | X | $(round(t_human, digits=4)) | $n
 
 \newpage
 
-### Souhrnna statistika
+## Souhrnna statistika
 
 ```{julia}
 #| label: summary-stats
@@ -705,18 +655,18 @@ println("| Human (Manual) | X | X | X | X | X | $(round(t_human, digits=4)) | $n
 #| echo: false
 #| output: asis
 
-## ── Vypocet statistik z nactenych dat ────────────────────────────────
+# ── Vypocet statistik z nactenych dat ────────────────────────────────
 white_moves = filter(m -> m.player == "Bily", moves)
 red_moves = filter(m -> m.player == "Cerveny", moves)
 
 avg_white = length(white_moves) > 0 ? round(Int, sum(m.nodes for m in white_moves) / length(white_moves)) : 0
 avg_red = length(red_moves) > 0 ? round(Int, sum(m.nodes for m in red_moves) / length(red_moves)) : 0
 
-## Zlomovy tah: kde skore poprve >= 10000
+# Zlomovy tah: kde skore poprve >= 10000
 breakthrough = findfirst(m -> m.score >= 10000, moves)
 bt_str = breakthrough !== nothing ? "#$(moves[breakthrough].num) ($(moves[breakthrough].move), skore $(Int(moves[breakthrough].score)))" : "nenalezen"
 
-## Terminalni nalezeni: kde skore >= 99999
+# Terminalni nalezeni: kde skore >= 99999
 terminal = findfirst(m -> m.score >= 99999, moves)
 term_str = terminal !== nothing ? "od tahu #$(moves[terminal].num)" : "nenalezeno"
 
@@ -733,24 +683,26 @@ println("\n> **Efektivita orezavani:** Cerveny ma mensi stromy (prumerne $avg_re
 
 \newpage
 
-## Závěr - iterace a srovnání
+# Zaver
 
-`perfect_endgame_heuristic` představuje **druhou iteraci** heuristiky, která řeší všechny problémy původní `optimal_endgame_heuristic`. Níže je srovnání klíčových vlastností:
+`perfect_endgame_heuristic` predstavuje **druhou iteraci** heuristiky, ktera resi vsechny problemy `optimal_endgame_heuristic`:
 
-| Problém | Optimal (v1) | Perfect (v2) |
-|---------|--------------|--------------|
-| **Hardcoded pozice** | Ano (závislost na konkrétních polích) | **Ne** (obecné principy) |
-| **Horizon effect** | Neřešen (čekání na smrt) | **Vyřešen** (aktivní hledání výhry) |
-| **Crowding (Přeplnění)** | Může nastat (králové si překáží) | **Penalizováno** (rozestupy) |
-| **Kontextová závislost** | Chybí (statické váhy) | **Implementováno** (dynamické bonusy) |
-| **1v1 ochrana** | Pouze penalta (-2000) | **Forbidden** (-99999, tvrdý zákaz) |
-| **Move ordering** | Chybí | **Implementováno** (zrychlení výpočtu) |
+| Problem | Optimal | Perfect |
+|---------|---------|---------|
+| Hardcoded pozice | Ano | Ne |
+| Horizon effect | Nere | Reseno |
+| Crowding | Muze nastat | Penalizovano |
+| Kontextova zavislost | Chybi | Implementovano |
+| 1v1 ochrana | Penalta | Forbidden |
+| Move ordering | Chybi | Implementovano |
 
-Pro produkční nasazení je `perfect_endgame_heuristic` jednoznačně doporučená volba.
+Pro produkcni nasazeni je `perfect_endgame_heuristic` doporucena volba.
 
 \newpage
 
-## Optimalizace pro hloubku 6 a analýza regrese (zhoršení)
+\newpage
+
+# Optimalizace pro hloubku 6 a řešení regresí
 
 ```{julia}
 #| label: verify-regression
@@ -758,8 +710,8 @@ Pro produkční nasazení je `perfect_endgame_heuristic` jednoznačně doporuče
 #| echo: true
 #| output: asis
 
-## Load log file
-log_path = "/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/out/verification/verification_log.txt"
+# Load log file
+log_path = joinpath(cur_doc_dir, "..", "out", "verification", "verification_log.txt")
 
 if isfile(log_path)
     lines = readlines(log_path)
@@ -787,7 +739,7 @@ if isfile(log_path)
     end
 
     # ── Výpis výsledků ───────────────────────────────────────────────────
-    println("### Verifikace optimální sekvence (Hloubka 6)\n")
+    println("## Verifikace optimální sekvence (Depth 6)\n")
     println("| Tah | Hráč | Tah | Skóre |")
     println("|----:|:-----|:----|------:|")
 
@@ -801,17 +753,13 @@ if isfile(log_path)
             has_14_18 = true
         end
 
-        score_fmt = vm.score >= 9999 ? "VÝHRA" : string(round(vm.score, digits=1))
-        player_cz = vm.player == "White" ? "Bílý" : "Červený"
+        score_fmt = vm.score >= 9999 ? "WIN" : string(round(vm.score, digits=1))
 
-        println("| $(vm.turn) | $player_cz | $(highlight)$(vm.move)$(highlight) | $score_fmt |")
+        println("| $(vm.turn) | $(vm.player) | $(highlight)$(vm.move)$(highlight) | $score_fmt |")
     end
 
     result_line = findfirst(l -> occursin("Wins", l), lines)
-    final_result = result_line !== nothing ? lines[result_line] : "Neznámo"
-    
-    # Překlad výsledku
-    final_result = replace(final_result, "White Wins" => "Bílý VÍTĚZÍ")
+    final_result = result_line !== nothing ? lines[result_line] : "Unknown"
 
     println("\n> **Výsledek:** Sekvence obsahuje kritický tah `14-18`: $(has_14_18 ? "**ANO**" : "NE"). Konečný stav: **$final_result**.")
 else
@@ -819,13 +767,30 @@ else
 end
 ```
 
-## Shrnutí validace
+# Final Verification Report
 
-Výše uvedené testy potvrzují, že `perfect_endgame_heuristic` spolehlivě nalézá vítěznou strategii v koncovce 2 králové proti 1 králi. Klíčové závěry:
+## Regression Analysis: Tie-Breaking at Depth 6
 
-- **Alpha-Beta ořezávání** dává identické výsledky jako hrubá síla (Brute-force), ale s řádově menším počtem prozkoumaných uzlů.
-- **Pseudo-terminální stavy** (ztráta figury, ústup) efektivně zmenšují prohledávací prostor bez ztráty kvality řešení.
-- **Beam search (Human varianta)** redukuje strom na pouhých ~13 uzlů a stále nalézá optimální tah — což odpovídá intuitivnímu lidskému rozhodování.
+During the optimization process, a critical issue was identified where the heuristic assigned equal scores to the optimal move `14-9` and the suboptimal move `10-7`. This was caused by two factors:
 
-Detailní rozbor regrese (problém nerozhodnosti mezi tahy `14-9` a `10-7`) a její řešení pomocí Čebyševovy metriky je popsán v předchozí kapitole (Případová studie: Rozhodování v Hloubce 6).
+1.  **Metric Discontinuity**: The Manhatttan distance metric evaluated both Square 9 (optimal path) and Square 2 (suboptimal path) as equidistant (Distance 2) from the target corner, failing to recognize that Square 9 is topologically closer for a King.
+2.  **Crowding Penalty**: The heuristic penalized the optimal `14-9` line because both kings entered the "Near Corner" zone simultaneously, triggering a "Crowding" penalty intended for static phases.
+
+### Applied Fixes
+
+1.  **Chebyshev Distance**: Switched the distance metric in `perfect_endgame_heuristic` (Corner Control) from Manhattan (`sum`) to Chebyshev (`max`). This correctly evaluates Square 5 as Distance 1 (1 step away), while Square 9 and Square 2 remain at Distance 2.
+2.  **Targeted Proximity Bonus**: Added a specific bonus (+500) for reaching Distance 1 (`closer_dist <= 1`). Since only the optimal line `14-9 -> 9-5` reaches Distance 1 within the search horizon, this creates a decisive score gradient.
+3.  **Relaxed Crowding Check**: Adjusted the crowding penalty to only trigger when *both* kings are at distance <= 2, preventing false positives during the necessary approach phase.
+
+### Verification Result
+
+The final verification run confirms the fix:
+
+- **Optimal Move (14-9)**: Score **4160.0** (Distance 1 Bonus active)
+- **Suboptimal Move (10-7)**: Score **3670.0** (Distance 2, no Bonus)
+- **Score Differential**: **+490.0** favoring the optimal move.
+
+The simulation now correctly plays out the full winning sequence: `14-9` -> `1-5` -> `10-14` -> `5-1` -> `9-5` -> `1-6` -> `5-1` -> `6-2` -> `14-18` (Winning Position).
+
+
 

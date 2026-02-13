@@ -163,7 +163,7 @@ Občas se stane, že AI "nevidí" cestu k výhře v rámci horizontu (depth limi
 
 Následující tabulka shrnuje váhy použité ve finální verzi heuristiky (`perfect_endgame_heuristic`). Tyto hodnoty byly laděny pomocí ablačních studií.
 
-```julia
+```{julia}
 #| label: tbl-params
 #| tbl-cap: "Parametry heuristické funkce (načteno z kódu)"
 #| output: asis

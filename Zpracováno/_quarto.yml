@@ -29,6 +29,7 @@ filters:
 
 format:
   pdf:
+    code-overflow: wrap
     documentclass: report
     papersize: a4
     fontsize: 11pt
@@ -43,6 +44,8 @@ format:
     latex-max-runs: 3
     include-in-header:
       - text: |
+          \usepackage{fvextra}
+          \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
           \usepackage{wrapfig}
           \usepackage{subcaption}
           \setmainfont{Linux Libertine O}
