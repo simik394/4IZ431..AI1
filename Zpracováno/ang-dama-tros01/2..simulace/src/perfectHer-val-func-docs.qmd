@@ -10,11 +10,7 @@ execute:
   echo: true
 ---
 
-\newpage
-
-# Uvod
-
-## Charakteristika
+# Charakteristika
 
 `perfect_endgame_heuristic` je **obecna principialni** heuristika postavena na 7 strategickych principech:
 
@@ -57,9 +53,12 @@ Pri zmene zdrojoveho kodu se dokumentace automaticky aktualizuje.
 
 ```{.julia include="heuristics.jl" region="perfect_material"}
 ```
+1. Bílé kameny (MAX)
+2. Červené kameny (MIN)
 
 ```{.julia include="heuristics.jl" region="perfect_1v1"}
 ```
+1. Penalta za redukci na 1v1 (nežádoucí stav v koncovce)
 
 > **Rozdil od Optimal:** `optimal` pouziva penaltu -2000, `perfect` pouziva hard forbidden -99999.
 
@@ -101,6 +100,10 @@ Kracive logika - rozliseni **kotvy** a **operatora**:
 
 ```{.julia include="heuristics.jl" region="perfect_mobility"}
 ```
+1. Bonus za úplné zablokování soupeře (Výhra)
+2. Bonus za omezení na 1 tah
+3. Bonus za omezení na 2 tahy
+4. Bonus za omezení na 3 tahy
 
 ## PRINCIP 7: Cornering (Tlak k okrajům)
 
@@ -108,11 +111,18 @@ Tlačení červeného k okrajům desky ("Kontrola hry").
 
 ```{.julia include="heuristics.jl" region="perfect_cornering"}
 ```
+1. Chebyshevova vzdálenost od středu (tlačení k okrajům)
+2. Bonus za dosažení první/poslední řady
+3. Bonus za dosažení krajního sloupce
 
 ## PRINCIP 8: Kontextove zavisle rizeni rohu
 
 ```{.julia include="heuristics.jl" region="perfect_corner_control"}
 ```
+1. Nalezení "kotvy" (král nejblíže rohu 5)
+2. Squeeze bonus (operátor na diagonále)
+3. Optimální vzdálenost operátora (4 pole)
+4. Maximální rozestup pro "síť" (5+ polí)
 
 > **Kontextova zavislost** - bonus za roh POUZE kdyz tam jeste nikdo neni.
 
@@ -340,7 +350,8 @@ redirect_stdio(stdout=devnull, stderr=devnull) do
         global node_counter = 0
 
         strat = Base.invokelatest(PruningStrategy, strat_int)
-        Base.invokelatest(minimax_with_tree, board, depth, -Inf, Inf, true, 0, "Start"; pruning=strat)
+        Base.invokelatest(minimax_with_tree, board, depth, -Inf, Inf, true, 0, "Start"; 
+            pruning=strat, eval_func=perfect_endgame_heuristic)
 
         total = length(tree_nodes)
         text = tree_to_text(tree_nodes, display_depth, depth)
@@ -371,9 +382,11 @@ println()
 println("---")
 println()
 
-println("### 1. Alpha-Beta — hrubá síla (PRUNE_NONE), ~$(res_ab[1]) uzlů")
+println("#### 1. Alpha-Beta — hrubá síla (PRUNE_NONE)")
 println()
-println("Ilustrativní zobrazení (horní 3 úrovně z 6):")
+println("**(Celkem prohledáno: $(res_ab[1]) uzlů v hloubce 6)**")
+println()
+println("Ilustrativní zobrazení (horní 3 úrovně):")
 println()
 println("```")
 println(res_ab[2])
@@ -383,9 +396,11 @@ println()
 println("---")
 println()
 
-println("### 2. Pragmatic — ztráta figury (PRUNE_LOSS_OF_PIECE), ~$(res_prag[1]) uzlů")
+println("#### 2. Pragmatic — ztráta figury (PRUNE_LOSS_OF_PIECE)")
 println()
-println("Ilustrativní zobrazení (horní 3 úrovně z 6):")
+println("**(Celkem prohledáno: $(res_prag[1]) uzlů v hloubce 6)**")
+println()
+println("Ilustrativní zobrazení (horní 3 úrovně):")
 println()
 println("```")
 println(res_prag[2])
@@ -395,9 +410,11 @@ println()
 println("---")
 println()
 
-println("### 3. Lazy — trestání ústupu (PRUNE_RETREAT), ~$(res_lazy[1]) uzlů")
+println("#### 3. Lazy — trestání ústupu (PRUNE_RETREAT)")
 println()
-println("Ilustrativní zobrazení (horní 4 úrovně z 6):")
+println("**(Celkem prohledáno: $(res_lazy[1]) uzlů v hloubce 6)**")
+println()
+println("Ilustrativní zobrazení (horní 4 úrovně):")
 println()
 println("```")
 println(res_lazy[2])
@@ -407,9 +424,11 @@ println()
 println("---")
 println()
 
-println("### 4. Human — beam search K=2 (PRUNE_HUMAN), ~$(res_human[1]) uzlů")
+println("#### 4. Human — beam search K=2 (PRUNE_HUMAN)")
 println()
-println("**Kompletní** postup (hloubka 6). S Beam Search (K=2) by měl být strom výrazně menší než plná verze.")
+println("**(Celkem prohledáno: **$(res_human[1])** uzlů v hloubce 6)**")
+println()
+println("**Kompletní** postup (všech 6 úrovní). Díky Beam Search (K=2) je strom extrémně malý.")
 println()
 println("```")
 println(res_human[2])

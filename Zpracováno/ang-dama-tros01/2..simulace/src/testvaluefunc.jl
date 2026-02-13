@@ -752,7 +752,8 @@ Pokud `pruning_strategy` != NONE, některé stavy mohou být vyhodnoceny jako te
 function minimax_with_tree(board::Matrix{Int}, depth::Int, alpha::Float64, beta::Float64,
     is_maximizing::Bool, parent_id::Int, move_str::String;
     config::HeuristicConfig=DEFAULT_CONFIG,
-    pruning::PruningStrategy=PRUNE_LOSS_OF_PIECE)
+    pruning::PruningStrategy=PRUNE_LOSS_OF_PIECE,
+    eval_func::Function=perfect_endgame_heuristic)
     global tree_enabled
 
     # Heuristic handles all position evaluation - no hardcoded forbidden positions
@@ -761,7 +762,7 @@ function minimax_with_tree(board::Matrix{Int}, depth::Int, alpha::Float64, beta:
     # Když dosáhneme hloubky 0, vyhodnotíme pozici pomocí heuristické funkce.
     # Heuristika vrací hodnotu z pohledu MAX hráče (vyšší = lepší pro bílého).
     if depth == 0
-        score = Float64(perfect_endgame_heuristic(board, config))
+        score = Float64(eval_func(board, config))
         node_id = add_tree_node(board, move_str, score, alpha, beta, is_maximizing, depth, false)
         return score, nothing, node_id
     end
@@ -773,7 +774,7 @@ function minimax_with_tree(board::Matrix{Int}, depth::Int, alpha::Float64, beta:
         stats = board_stats(board)
         white_count = stats.white_pieces + stats.white_kings
         if white_count < 2
-            score = Float64(perfect_endgame_heuristic(board, config))
+            score = Float64(eval_func(board, config))
             node_id = add_tree_node(board, move_str * " [LOSS PRUNED]", score, alpha, beta, is_maximizing, depth, true)
             return score, nothing, node_id
         end
@@ -788,7 +789,7 @@ function minimax_with_tree(board::Matrix{Int}, depth::Int, alpha::Float64, beta:
             d2 = max(abs(wp2[1] - rp[1]), abs(wp2[2] - rp[2]))
             avg_dist = (d1 + d2) / 2.0
             if avg_dist > 4.5
-                score = Float64(perfect_endgame_heuristic(board, config)) - 9000.0
+                score = Float64(eval_func(board, config)) - 9000.0
                 node_id = add_tree_node(board, move_str * " [RETREAT PRUNED]", score, alpha, beta, is_maximizing, depth, true)
                 return score, nothing, node_id
             end

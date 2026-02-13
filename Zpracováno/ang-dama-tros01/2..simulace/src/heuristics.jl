@@ -374,14 +374,14 @@ function optimal_endgame_heuristic(board::Matrix{Int})
         #| region: optimal_material
         if is_white(p)
             white_pieces += 1
-            score += is_king(p) ? const_KING : const_PAWN
+            score += is_king(p) ? const_KING : 40.0  # <1>
             if is_king(p)
                 white_kings += 1
                 push!(white_positions, (r, c))
             end
         else
             red_pieces += 1
-            score -= is_king(p) ? const_KING : const_PAWN
+            score -= is_king(p) ? const_KING : 40.0  # <2>
             if is_king(p)
                 red_kings += 1
             end
@@ -392,7 +392,7 @@ function optimal_endgame_heuristic(board::Matrix{Int})
     # --- B. ODMÍTNUTÍ VÝMĚNY (1v1 = katastrofa!) ---
     #| region: optimal_1v1
     if white_pieces == 1 && red_pieces >= 1
-        score -= const_EXCHANGE_PENALTY
+        score -= const_EXCHANGE_PENALTY  # <1>
     end
     #| endregion: optimal_1v1
 
@@ -814,13 +814,13 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
                 num_moves = length(red_moves)
 
                 if num_moves == 0
-                    score += PERFECT_WEIGHTS[:WIN]  # Výhra
+                    score += PERFECT_WEIGHTS[:WIN]  # <1>
                 elseif num_moves == 1
-                    score += PERFECT_WEIGHTS[:MOBILITY]
+                    score += PERFECT_WEIGHTS[:MOBILITY]  # <2>
                 elseif num_moves == 2
-                    score += 300.0  # Dobré - omezená mobilita
+                    score += 300.0  # <3>
                 elseif num_moves == 3
-                    score += 100.0  # Přijatelné
+                    score += 100.0  # <4>
                 end
                 # 4+ tahů = žádný bonus
             catch e
@@ -839,14 +839,14 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
             red_dist_from_center = abs(red_row - center_row) + abs(red_col - center_col)
 
             # Bonus za červeného daleko od středu (na okrajích)
-            score += red_dist_from_center * 40.0
+            score += red_dist_from_center * 40.0  # <1>
 
-            # Extra bonus za skutečný okraj (první nebo poslední řádek/sloupec)
+            # Extra bonus za skutečný okraj
             if red_row == 1 || red_row == 8
-                score += 150.0
+                score += 150.0  # <2>
             end
             if red_col == 1 || red_col == 8
-                score += 150.0
+                score += 150.0  # <3>
             end
             #| endregion: perfect_cornering
         end
@@ -897,7 +897,7 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
                     # SILNÝ bonus aby dominoval nad jinými metrikami
                     closer_dist = min(dist1, dist2)
                     if closer_dist <= 3
-                        score += (5 - closer_dist) * 600.0  # Čím blíž, tím lépe (ZVÝŠENO na 600 pro tie-break 14-9 vs 10-7)
+                        score += (5 - closer_dist) * 600.0  # <1>
                     end
                 else
                     # === JEDEN W BLÍZKO ROHU: druhý by měl být na diagonále ===
@@ -925,11 +925,11 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
                     # Bonus za dobrý spread operátora
                     # Přidáno >= 5 (700) pro preferenci širší sítě (tah 14-18)
                     if farther_dist >= 5
-                        score += 700.0
+                        score += 700.0  # <2>
                     elseif farther_dist >= 4
-                        score += 400.0  # Operátor správně vzdálený
+                        score += 400.0  # <3>
                     elseif farther_dist >= 3
-                        score += 200.0
+                        score += 200.0  # <4>
                     end
 
                     # Penalta pokud OBA jsou příliš blízko rohu (crowding)
