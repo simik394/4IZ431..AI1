@@ -42,6 +42,21 @@ execute:
 
 \newpage
 
+# Matematická notace
+
+Pro formální popis heuristiky používáme následující značení:
+
+- $P$: Množina všech kamenů na desce.
+- $W \subset P$: Množina bílých kamenů (MAX hráč).
+- $R \subset P$: Množina červených kamenů (MIN hráč).
+- $K_W \subseteq W$: Množina bílých králů.
+- $K_R \subseteq R$: Množina červených králů.
+- $pos(p) = (r, c)$: Pozice kamene $p$ (řádek, sloupec).
+- $d_{Cheb}(a, b) = \max(|a_r - b_r|, |a_c - b_c|)$: Chebyshevova vzdálenost (počet tahů krále).
+- $d_{Manh}(a, b) = |a_r - b_r| + |a_c - b_c|$: Manhattanská vzdálenost.
+
+\newpage
+
 # Implementace - Klicove sekce
 
 ::: {.callout-note}
@@ -50,6 +65,13 @@ Pri zmene zdrojoveho kodu se dokumentace automaticky aktualizuje.
 :::
 
 ## PRINCIP 1: Material a 1v1 ochrana
+
+Skóre materiálu $S_{mat}$ je vypočteno jako rozdíl ohodnocení kamenů:
+
+$$ S_{mat} = \sum_{w \in W} V(w) - \sum_{r \in R} V(r) $$
+
+kde hodnota kamene $V(p)$ je definována:
+$$ V(p) = \begin{cases} 100 & \text{pokud } p \text{ je král} \\ 40 & \text{pokud } p \text{ je pěšec} \end{cases} $$
 
 ```{.julia include="heuristics.jl" region="perfect_material"}
 ```
@@ -98,6 +120,10 @@ Kracive logika - rozliseni **kotvy** a **operatora**:
 
 Čím méně tahů má červený, tím lépe. 0 tahů = výhra.
 
+Mobilita je definována počtem legálních tahů $|M(R)|$ červeného hráče:
+
+$$ S_{mob} = \begin{cases} 10000 & \text{pokud } |M(R)| = 0 \quad (\text{Výhra}) \\ 600 & \text{pokud } |M(R)| = 1 \\ 300 & \text{pokud } |M(R)| = 2 \\ 100 & \text{pokud } |M(R)| = 3 \\ 0 & \text{jinak} \end{cases} $$
+
 ```{.julia include="heuristics.jl" region="perfect_mobility"}
 ```
 1. Bonus za úplné zablokování soupeře (Výhra)
@@ -109,6 +135,15 @@ Kracive logika - rozliseni **kotvy** a **operatora**:
 
 Tlačení červeného k okrajům desky ("Kontrola hry").
 
+Cílem je vytlačit červeného z centra (4.5, 4.5) směrem k okrajům. Používáme Chebyshevovu vzdálenost:
+
+$$ d_{center}(r) = \max(|r_{row} - 4.5|, |r_{col} - 4.5|) $$
+
+Celkové skóre za cornering:
+$$ S_{corn} = \sum_{r \in R} (d_{center}(r) \times 40) + B_{edge}(r) $$
+
+kde $B_{edge}(r) = 150$ pokud $r$ leží přímo na okraji desky.
+
 ```{.julia include="heuristics.jl" region="perfect_cornering"}
 ```
 1. Chebyshevova vzdálenost od středu (tlačení k okrajům)
@@ -116,6 +151,14 @@ Tlačení červeného k okrajům desky ("Kontrola hry").
 3. Bonus za dosažení krajního sloupce
 
 ## PRINCIP 8: Kontextove zavisle rizeni rohu
+
+Tento princip řídí spolupráci dvou bílých králů ($w_1, w_2$) při chytání červeného ($r$) do sítě u rohu (pole 1).
+
+Definujeme **kotvu** ($w_{anchor}$) jako krále bližšího k rohu:
+$$ w_{anchor} = \arg\min_{w \in \{w_1, w_2\}} d_{Cheb}(w, \text{Corner}_1) $$
+
+Druhý král je **operátor** ($w_{op}$). Skóre sítě $S_{net}$ je uděleno, pokud operátor drží diagonálu:
+$$ S_{net} = \begin{cases} 1200 & \text{pokud } w_{op} \text{ je na diagonále } \wedge d_{Cheb}(w_{op}, \text{Corner}_1) \ge 3 \\ -800 & \text{pokud } d_{Cheb}(w_{op}, \text{Corner}_1) \le 2 \quad (\text{Crowding}) \end{cases} $$
 
 ```{.julia include="heuristics.jl" region="perfect_corner_control"}
 ```
@@ -268,7 +311,7 @@ println("\n> $result_str")
 # ── SROVNÁVACÍ VIZUALIZACE (TEXT) ──────────────────────────────────────
 # Všechny varianty běží na hloubce 6 (zadání).
 # Výstup: textový DOT zdroj stromů.
-#   1. Alpha-Beta (PRUNE_NONE)         — ilustrativní (hloubka 3)
+#   1. Alpha-Beta (PRUNE_BASIC)         — ilustrativní (hloubka 3)
 #   2. Pragmatic  (PRUNE_LOSS_OF_PIECE)— ilustrativní (hloubka 3)
 #   3. Lazy       (PRUNE_RETREAT)      — ilustrativní (hloubka 4)
 #   4. Human      (PRUNE_HUMAN)        — KOMPLETNÍ hloubka 6
@@ -382,7 +425,9 @@ println()
 println("---")
 println()
 
-println("#### 1. Alpha-Beta — hrubá síla (PRUNE_NONE)")
+println("#### 1. Alpha-Beta — základní (PRUNE_BASIC)")
+println()
+println("Standardní Alpha-Beta algoritmus. Větve jsou ořezány (Pruned), pokud α ≥ β, ale neprovádí se žádné *dodatečné* heuristické ořezávání.")
 println()
 println("**(Celkem prohledáno: $(res_ab[1]) uzlů v hloubce 6)**")
 println()

@@ -61,7 +61,7 @@ Move(from::Position, to::Position, is_jump::Bool, ::Nothing) =
 
 # Konfigurace prořezávání (pro ablační studie)
 @enum PruningStrategy begin
-    PRUNE_NONE         # Žádné pseudo-terminální prořezávání
+    PRUNE_BASIC         # Pouze standardní A-B, žádné heuristické prořezávání
     PRUNE_LOSS_OF_PIECE # Prořezat pokud bílý ztratí figuru (stane se 1v1)
     PRUNE_RETREAT      # Prořezat pokud se bílý zbytečně vzdálí
     PRUNE_HUMAN        # Beam Search (K=2) simulující lidské uvažování
