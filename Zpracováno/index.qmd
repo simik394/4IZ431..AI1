@@ -1,6 +1,20 @@
+---
+id: index
+aliases: []
+tags: []
+---
 # Úvod
 
-Předmět **4IZ431 - Algoritmy umělé inteligence** pro mě nebyl jen o tom "splnit a zapomenout". Bylo to spíš o tom přestat se těch algoritmů bát a začít je chápat v praxi. Tahle práce shrnuje dva hlavní projekty, na kterých jsem si vyzkoušel, jak teorie vypadá, když se potká s realitou (a s autograderem).
+Předmět **4IZ431 - Algoritmy umělé inteligence** pro mě nebyl jen o tom "splnit a zapomenout". Jelikož bych rád rozšiřoval svoje dostupné nástroje pro chytrou automatizaci, a předpokládám že prohledávání stavového prostoru by v tom mohlo hrát poměrně výraznou roli. Pochopení samotného algoritmu je však jen prvním krokem k hlubšímu pochopení vlastností dané metody. 
+Hádám, že vyučující tohoto předmětu sdílejí podobný názor, jelikož prvním z úkolů bylo simulovat prohledávání ručně, konkrétně do hloubky 6 v anglické dámě. Pro řešení však zvolili velmi příhodnou situaci, takže reálně zajímavý z hlediska vítězství je jen poměrně limitovaný prostor, takže i ručně by nebylo přespříliš komplikované zadání splnit. 
+Nicméně to nebylo zase tak přímočaré jak by se čtenáři, s problematikou neobeznámeným, mohlo zatím jevit. Aby bylo vůbec možné požadovaný algoritmus provést, je nutné mít tzv. "value funkci". Taková funkce bere jako vstup stav v jednom konkrétním okamžiku a přiřazuje mu konkrétní číselnou hodnotu, díky které můžeme vůbec od sebe odlišit co je dobré a co nikoliv. A jelikož to má být stejná funkce která bude fungovat stejně dobře na odlišné situace, dokáže takovýto úkol celkem zrádný.
+Zejména při manuálním provedení kdy se člověk chce za každou cenu vyhnout tomu aby musel postupně zadávat do kalkulačky (i kdybych už měl kalkulačku která umí počítat mojí value funkci přímo ze stavu, a nemusel bych ručně vyhodnocovat všechny výpočty které obsahuje jeden jediný stav) všechny možné stavy v hloubce 6. I kdyby se podařila nejlepší varianta alphabeta průchodu a byla jich jen polovina je to příliš, teda aspoň na můj vkus na manuální činnost. 
+Každopádně, čím náročnější bude provést jeden průchod, tím méně experimentování se samotnou value funkcí zvládnu/budu ochoten udělat. Což považuju za suboptimální v případě kdy jsem si chtěl prohledávání stav. prostoru alespoň decentně osahat. 
+
+Samozřejmě, mohli byste namítnout, že k tomu by byl lépe uzpůsobený druhý úkol, jenž už zahrnoval algoritmy v jejich přirozenějším prostředí. 
+Bylo jím cvičení vytvořené na univerzitě v Berkley a jednou z volite
+
+Tahle práce shrnuje dva hlavní projekty, na kterých jsem si vyzkoušel, jak teorie vypadá, když se potká s realitou (a s autograderem).
 
 ## Co zde najdete?
 
