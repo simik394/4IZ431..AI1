@@ -311,13 +311,13 @@ redirect_stdio(stdout=devnull, stderr=devnull) do
             end
             node === nothing && return
 
-            prefix = "  " ^ indent
+            prefix = "  "^indent
             player = node.is_max ? "MAX" : "MIN"
             prune = node.is_pruned ? " [PRUNED]" : ""
             println(buf, prefix, "├─ ", node.move_str, " (", player,
-                    ") score=", round(node.score, digits=1),
-                    " α=", round(node.alpha, digits=1),
-                    " β=", round(node.beta, digits=1), prune)
+                ") score=", round(node.score, digits=1),
+                " α=", round(node.alpha, digits=1),
+                " β=", round(node.beta, digits=1), prune)
 
             for child_id in node.children
                 if child_id in visible_ids
@@ -352,9 +352,9 @@ redirect_stdio(stdout=devnull, stderr=devnull) do
 
     # ── Generování stromů ─────────────────────────────────────────────
     # Všechny na hloubce 6
-    global res_ab    = generate_text_tree(0, 6, 3)   # Alpha-Beta: illustr. hl. 3
-    global res_prag  = generate_text_tree(1, 6, 3)   # Pragmatic:  illustr. hl. 3
-    global res_lazy  = generate_text_tree(2, 6, 4)   # Lazy:       illustr. hl. 4
+    global res_ab = generate_text_tree(0, 6, 3)   # Alpha-Beta: illustr. hl. 3
+    global res_prag = generate_text_tree(1, 6, 3)   # Pragmatic:  illustr. hl. 3
+    global res_lazy = generate_text_tree(2, 6, 4)   # Lazy:       illustr. hl. 4
     global res_human = generate_text_tree(3, 6, 6)   # Human:      KOMPLETNÍ hl. 6
 end
 
@@ -362,9 +362,10 @@ end
 
 println("### Srovnání prořezávacích strategií (všechny hloubka 6)")
 println()
-println("Počáteční pozice: **W@10, W@14, R@1** (2 bílí králové vs 1 červený král).")
-println("Všechny varianty hledají do hloubky **6** (3 tahy každého hráče).")
-println("Textové stromy níže slouží k validaci obsahu — vizuální renderování bude v další iteraci.")
+println("### Srovnání prořezávacích strategií (všechny hloubka 6)")
+println()
+println("Počáteční pozice: **W@10, W@14, R@1** (Standardní zadání).")
+println("Textové stromy níže ukazují, jak jednotlivé strategie (ne)ořezávají větve.")
 println()
 
 println("---")
@@ -408,7 +409,7 @@ println()
 
 println("### 4. Human — beam search K=2 (PRUNE_HUMAN), ~$(res_human[1]) uzlů")
 println()
-println("**Kompletní** postup prohledávání do hloubky 6 (nejpřísnější varianta):")
+println("**Kompletní** postup (hloubka 6). S Beam Search (K=2) by měl být strom výrazně menší než plná verze.")
 println()
 println("```")
 println(res_human[2])
@@ -603,39 +604,59 @@ function alphabeta_ordered_bench(board, depth, alpha, beta, is_max, pruning_stra
     end
 end
 
+
+
+
+function setup_benchmark_board()
+    board = zeros(Int, 8, 8)
+    p10 = notation_to_position(10)
+    board[p10.r, p10.c] = WHITE_KING
+    p14 = notation_to_position(14)
+    board[p14.r, p14.c] = WHITE_KING
+    p1 = notation_to_position(1)
+    board[p1.r, p1.c] = RED_KING
+    return board
+end
+
 # RUN BENCHMARK
+# Nastavení desky: Králové jsou daleko od sebe (Bílý 1, 5; Červený 32)
+# Toto rozestavení bylo zvoleno záměrně, aby se projevilo "Retreat" ořezávání,
+# které se aktivuje pouze při dostatečné vzdálenosti (Chebyshev > 4.5).
+
+# RUN BENCHMARK
+# Nastavení desky: Standardní pozice dle zadání (Bílý 10, 14; Červený 1)
 board = setup_benchmark_board()
 depth = 6
-# Strategies: 0=NONE, 1=LOSS, 2=RETREAT, 3=HUMAN
 
-t0 = time();
-_, _, n_bf = minimax_no_pruning_bench(board, depth, true);
-t_bf = time() - t0;
-t0 = time();
-_, _, n_smart = minimax_smart_bench(board, depth, true);
-t_smart = time() - t0;
-t0 = time();
-_, _, n_clever = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 0);
-t_clever = time() - t0;
-t0 = time();
-_, _, n_prag = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 1);
-t_prag = time() - t0;
-t0 = time();
-_, _, n_lazy = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 2);
-t_lazy = time() - t0;
-t0 = time();
-_, _, n_human = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 3);
-t_human = time() - t0;
+# 0. WARMUP (JIT Kompilace)
+Base.invokelatest(minimax_smart_bench, board, 1, true)
+Base.invokelatest(alphabeta_ordered_bench, board, 1, -Inf, Inf, true, 0)
+
+# 1. Měření
+t0 = time(); _, _, n_bf = minimax_smart_bench(board, depth, true); t_bf = time() - t0;
+t0 = time(); _, _, n_smart = minimax_smart_bench(board, depth, true); t_smart = time() - t0;
+t0 = time(); _, _, n_clever = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 0); t_clever = time() - t0;
+t0 = time(); _, _, n_prag = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 1); t_prag = time() - t0;
+t0 = time(); _, _, n_lazy = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 2); t_lazy = time() - t0;
+t0 = time(); _, _, n_human = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 3); t_human = time() - t0;
 
 # OUTPUT
-println("| Algoritmus | Move Ordering | Alpha-Beta | 1v1 Term. | Pressure Term. | Beam Search | Čas (s) | Uzlů |")
-println("|---|:---:|:---:|:---:|:---:|:---:|---:|---:|")
-println("| Brute-force | | | | | | $(round(t_bf, digits=4)) | $n_bf |")
-println("| Smart | X | | | | | $(round(t_smart, digits=4)) | $n_smart |")
-println("| Clever (AB) | X | X | | | | $(round(t_clever, digits=4)) | $n_clever |")
-println("| Pragmatic | X | X | X | | | $(round(t_prag, digits=4)) | $n_prag |")
-println("| Lazy | X | X | X | X | | $(round(t_lazy, digits=4)) | $n_lazy |")
-println("| Human (Manual) | X | X | X | X | X | $(round(t_human, digits=4)) | $n_human |")
+println("| Algoritmus | Strategie | Ořezávání | 1v1 Term. | Pressure | Beam | Čas (s) | Uzlů |")
+println("| :--- | :--- | :---: | :---: | :---: | :---: | ---: | ---: |")
+println("| **Brute-force** | - | - | - | - | - | $(round(t_bf, digits=4)) | $n_bf |")
+println("| **Smart** | Move Ordering | - | - | - | - | $(round(t_smart, digits=4)) | $n_smart |")
+println("| **Clever** | A-B | **ANO** | - | - | - | $(round(t_clever, digits=4)) | $n_clever |")
+println("| **Pragmatic** | A-B | **ANO** | **ANO** | - | - | $(round(t_prag, digits=4)) | $n_prag |")
+println("| **Lazy** | A-B + Retreat | **ANO** | **ANO** | **ANO** | - | $(round(t_lazy, digits=4)) | $n_lazy |")
+println("| **Human** | A-B + Beam (K=2) | **ANO** | **ANO** | **ANO** | **ANO** | $(round(t_human, digits=4)) | **$n_human** |")
+
+println("\n**Legenda k tabulce:**")
+println("- **Strategie**: Hlavní vylepšení algoritmu oproti hrubé síle.")
+println("- **Ořezávání**: Použití Alpha-Beta ořezávání.")
+println("- **1v1 Term.**: Okamžité ukončení při detekci výměny 1 za 1.")
+println("- **Pressure**: Specifické ořezávání pro \"ústup\" (Retreat).")
+println("- **Beam**: Ponechání pouze K nejlepších tahů v každé úrovni (pro Human K=2).")
+println("- **Uzlů**: Ve standardní pozici by měl Human algoritmus (Beam Search) výrazně snížit počet uzlů oproti Pragmatic, i když Retreat podmínka není splněna.")
 ```
 
 ### Vysvětlivky k reportu
@@ -647,7 +668,10 @@ println("| Human (Manual) | X | X | X | X | X | $(round(t_human, digits=4)) | $n
 
 \newpage
 
-## Souhrnna statistika
+## Souhrnná statistika (Standardní hra)
+
+Následující statistiky vycházejí ze stejné **standardní hry** jako benchmark výše (W@10,14 vs R@1). 
+Tato sekce detailněji analyzuje průběh celé simulace.
 
 ```{julia}
 #| label: summary-stats
@@ -677,6 +701,10 @@ println("| **Prumerne uzly/tah (bily)** | $avg_white |")
 println("| **Prumerne uzly/tah (cerveny)** | $avg_red |")
 println("| **Zlomovy tah** | $bt_str |")
 println("| **Terminalni nalezeni** | $term_str |")
+
+println("\n### Vysvětlení pojmů")
+println("- **Zlomový tah**: Tah, kdy algoritmus poprvé detekuje vyhranou pozici (skóre >= 10000).")
+println("- **Terminalni nalezeni**: Tah, kdy algoritmus najde nejrychlejší cestu k vítězství nebo matu.")
 
 println("\n> **Efektivita orezavani:** Cerveny ma mensi stromy (prumerne $avg_red vs $avg_white uzlu) — bily ma vetsi volnost a vice alternativ.")
 ```

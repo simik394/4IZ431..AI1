@@ -784,11 +784,11 @@ function minimax_with_tree(board::Matrix{Int}, depth::Int, alpha::Float64, beta:
         if length(w_pos) >= 2 && length(r_pos) >= 1
             wp1, wp2 = w_pos[1], w_pos[2]
             rp = r_pos[1]
-            d1 = abs(wp1[1] - rp[1]) + abs(wp1[2] - rp[2])
-            d2 = abs(wp2[1] - rp[1]) + abs(wp2[2] - rp[2])
+            d1 = max(abs(wp1[1] - rp[1]), abs(wp1[2] - rp[2]))
+            d2 = max(abs(wp2[1] - rp[1]), abs(wp2[2] - rp[2]))
             avg_dist = (d1 + d2) / 2.0
-            if avg_dist > 5.0
-                score = Float64(perfect_endgame_heuristic(board, config)) - 1000.0
+            if avg_dist > 4.5
+                score = Float64(perfect_endgame_heuristic(board, config)) - 9000.0
                 node_id = add_tree_node(board, move_str * " [RETREAT PRUNED]", score, alpha, beta, is_maximizing, depth, true)
                 return score, nothing, node_id
             end

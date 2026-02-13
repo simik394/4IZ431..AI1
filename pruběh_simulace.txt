@@ -1,0 +1,6 @@
+Simulace: 2 bílí králové vs 1 červený král
+Bílý: 2 králové na pozicích 10, 14
+Červený: 1 král na pozici 1
+Hloubka prohledávání: 6
+Strategie: Lazy (PRUNE_RETREAT)
+----------------------------------------
