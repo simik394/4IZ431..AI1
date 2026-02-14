@@ -8,6 +8,11 @@ function run_verification()
             println(f, msg)
         end
 
+        log_both("--- WARMUP (JIT COMPILATION) ---")
+        board = create_assignment_board()
+        # Warmup with shallow search
+        minimax(board, 4, -Inf, Inf, true; pruning=PRUNE_LOSS_OF_PIECE)
+
         log_both("--- VERIFYING OPTIMAL SEQUENCE FROM START ---")
         board = create_assignment_board()
         log_both("Initial Board:")

@@ -1005,10 +1005,10 @@ function minimax(board::Matrix{Int}, depth::Int, alpha::Float64, beta::Float64, 
         if length(w_pos) >= 2 && length(r_pos) >= 1
             wp1, wp2 = w_pos[1], w_pos[2]
             rp = r_pos[1]
-            d1 = abs(wp1[1] - rp[1]) + abs(wp1[2] - rp[2])
-            d2 = abs(wp2[1] - rp[1]) + abs(wp2[2] - rp[2])
+            d1 = max(abs(wp1[1] - rp[1]), abs(wp1[2] - rp[2]))
+            d2 = max(abs(wp2[1] - rp[1]), abs(wp2[2] - rp[2]))
             avg_dist = (d1 + d2) / 2.0
-            if avg_dist > 5.0
+            if avg_dist > 4.5
                 return Float64(perfect_endgame_heuristic(board, config)) - 1000.0, nothing
             end
         end

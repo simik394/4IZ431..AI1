@@ -25,9 +25,9 @@ execute:
 | 7 | Cornering | Tlak k okrajum |
 | 8 | Corner Control | Kontextove zavisle rizeni rohu |
 
-::: {.callout-important}
-## Proč Kapitola 2 (Základní heuristika) selhala?
-V hloubce 6 nedokázala základní heuristika s Manhattanskou vzdáleností rozlišit mezi tahem `14-9` (vítězný) a `10-7` (remíza). Problémem byl tzv. **Horizon Effect** a fakt, že v dámě se figurky pohybují po diagonálách, což Manhattan ignoruje. Tato kapitola zavádí **obecné principy**, které tento "strop" překonávají.
+::: {.callout-note}
+## Přechod na obecné principy
+Zatímco základní heuristiky často spoléhají na materiálovou převahu, tato kapitola zavádí **obecné principy**, které umožňují AI efektivně řešit koncovky i v situacích, kdy materiál nehraje roli (např. 2v1).
 :::
 
 > **Pristup:** Zadne hardcoded pozice - pouze obecne principy.
@@ -58,12 +58,7 @@ Pro formální popis heuristiky používáme následující značení:
 - $K_R \subseteq R$: Množina červených králů.
 - $pos(p) = (r, c)$: Pozice kamene $p$ (řádek, sloupec).
 - $d_{Cheb}(a, b) = \max(|a_r - b_r|, |a_c - b_c|)$: Chebyshevova vzdálenost (počet tahů krále).
-- $d_{Manh}(a, b) = |a_r - b_r| + |a_c - b_c|$: Manhattanská vzdálenost.
 
-::: {.callout-note}
-## Proč Manhattan v dámě selhává?
-Manhattanská vzdálenost počítá kroky "křížem" (nahoru + do boku). Král v dámě se ale pohybuje diagonálně - jeden krok diagonálně je v Manhattanu vzdálenost 2, ale v Čebyševu (skutečný počet tahů) je to 1. Čebyševova metrika tak věrněji odráží **tempo** hry.
-:::
 
 \newpage
 
@@ -875,12 +870,12 @@ end
 
 During the optimization process, a critical issue was identified where the heuristic assigned equal scores to the optimal move `14-9` and the suboptimal move `10-7`. This was caused by two factors:
 
-1.  **Metric Discontinuity**: The Manhatttan distance metric evaluated both Square 9 (optimal path) and Square 2 (suboptimal path) as equidistant (Distance 2) from the target corner, failing to recognize that Square 9 is topologically closer for a King.
+1.  **Metrika vzdálenosti**: Původní metrika nedokázala správně ohodnotit rozdíl mezi vyhranou a remízovou variantou, protože ignorovala diagonální dynamiku dámy.
 2.  **Crowding Penalty**: The heuristic penalized the optimal `14-9` line because both kings entered the "Near Corner" zone simultaneously, triggering a "Crowding" penalty intended for static phases.
 
 ### Applied Fixes
 
-1.  **Chebyshev Distance**: Switched the distance metric in `perfect_endgame_heuristic` (Corner Control) from Manhattan (`sum`) to Chebyshev (`max`). This correctly evaluates Square 5 as Distance 1 (1 step away), while Square 9 and Square 2 remain at Distance 2.
+1.  **Chebyshevova vzdálenost**: Tato metrika správně vyhodnocuje Square 5 jako Distance 1 (1 krok), zatímco Square 9 a Square 2 jsou vzdáleny 2 kroky.
 2.  **Targeted Proximity Bonus**: Added a specific bonus (+500) for reaching Distance 1 (`closer_dist <= 1`). Since only the optimal line `14-9 -> 9-5` reaches Distance 1 within the search horizon, this creates a decisive score gradient.
 3.  **Relaxed Crowding Check**: Adjusted the crowding penalty to only trigger when *both* kings are at distance <= 2, preventing false positives during the necessary approach phase.
 

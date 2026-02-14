@@ -85,7 +85,7 @@ const PERFECT_WEIGHTS = Dict(
 Hlavní hodnotící funkce s kompletní logikou:
 - Materiál (pěšec=100, král=300)
 - Poziční bonusy (střed, okraje, rohy)
-- Endgame nahánění (Manhattan distance)
+- Endgame nahánění (Chebyshev distance)
 """
 #| region: my_heuristic_start
 function my_heuristic(board::Matrix{Int})
@@ -885,8 +885,7 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
                 white_at_corner = any(wp -> wp[1] == 1 && wp[2] == 2, white_positions)
 
                 # Je některý W blízko rohu (distance <= 2)?
-                # POUŽITÍ CHEBYSHEV DISTANCE (max) místo Manhattan (sum)
-                # Důvod: Král se hýbe o 1 pole všemi směry. Manhattan (5->1) je 2, ale Chebyshev je 1.
+                # POUŽITÍ CHEBYSHEV DISTANCE (max)
                 dist1 = max(abs(wp1[1] - 1), abs(wp1[2] - 2))
                 dist2 = max(abs(wp2[1] - 1), abs(wp2[2] - 2))
                 white_near_corner = (min(dist1, dist2) <= 2)

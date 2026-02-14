@@ -125,129 +125,61 @@ function run_smart(board, depth)
     return duration, nodes
 end
 
-# Fake Enum for this script context
-const PRUNE_NONE = 0
-const PRUNE_LOSS_OF_PIECE = 1
-const PRUNE_RETREAT = 2
-const PRUNE_HUMAN = 3
-
-# C, D, E, F variants use alphabeta_ordered
-
-function alphabeta_ordered(board, depth, alpha, beta, is_max, pruning_strat)
-    # 1. Pruning checks (Pseudo-terminal)
-    if pruning_strat == PRUNE_LOSS_OF_PIECE || pruning_strat == PRUNE_RETREAT || pruning_strat == PRUNE_HUMAN
-        player_pieces = count(x -> x == WHITE || x == WHITE_KING, board)
-        if player_pieces < 2
-            return -99999.0, nothing, 1
-        end
-    end
-
-    if (pruning_strat == PRUNE_RETREAT || pruning_strat == PRUNE_HUMAN) && !is_max
-        w_kings = [Position(r, c) for r in 1:8, c in 1:8 if board[r, c] == WHITE_KING]
-        r_kings = [Position(r, c) for r in 1:8, c in 1:8 if board[r, c] == RED_KING]
-
-        if length(w_kings) >= 2 && length(r_kings) == 1
-            wk1, wk2 = w_kings[1], w_kings[2]
-            rk = r_kings[1]
-            dist = (max(abs(wk1.r - rk.r), abs(wk1.c - rk.c)) + max(abs(wk2.r - rk.r), abs(wk2.c - rk.c))) / 2.0
-
-            if dist > 4.5
-                return -9000.0, nothing, 1
-            end
-        end
-    end
-
-    if depth == 0
-        return Float64(perfect_endgame_heuristic(board)), nothing, 1
-    end
-
-    player = is_max ? 1 : -1
-    moves = get_legal_moves(board, player)
-
-    if isempty(moves)
-        return is_max ? -99999.0 : 99999.0, nothing, 1
-    end
-
-    # MOVE ORDERING
-    move_scores = Tuple{Move,Float64}[]
-    for m in moves
-        tmp = make_move(board, m)
-        score = Float64(perfect_endgame_heuristic(tmp))
-        push!(move_scores, (m, score))
-    end
-    sort!(move_scores, by=x -> x[2], rev=is_max)
-
-    sorted_moves = [x[1] for x in move_scores]
-
-    # HUMAN / FORWARD PRUNING Logic
-    if pruning_strat == PRUNE_HUMAN
-        # Only consider top K moves. For manual simulation, K=2 is reasonable.
-        # "I'll try this one, and maybe this one. The rest look bad."
-        k = 2
-        if length(sorted_moves) > k
-            sorted_moves = sorted_moves[1:k]
-        end
-    end
-
-    best_move = sorted_moves[1]
-    total_nodes = 1
-
-    if is_max
-        for move in sorted_moves
-            new_board = make_move(board, move)
-            score, _, nodes = alphabeta_ordered(new_board, depth - 1, alpha, beta, false, pruning_strat)
-            total_nodes += nodes
-            if score > alpha
-                alpha = score
-                best_move = move
-            end
-            if alpha >= beta
-                break # Beta cutoff
-            end
-        end
-        return alpha, best_move, total_nodes
-    else
-        for move in sorted_moves
-            new_board = make_move(board, move)
-            score, _, nodes = alphabeta_ordered(new_board, depth - 1, alpha, beta, true, pruning_strat)
-            total_nodes += nodes
-            if score < beta
-                beta = score
-                best_move = move
-            end
-            if beta <= alpha
-                break # Alpha cutoff
-            end
-        end
-        return beta, best_move, total_nodes
-    end
-end
+# C, D, E, F variants use centralized minimax from testvaluefunc.jl
 
 function run_clever(board, depth)
     start_time = time()
-    val, move, nodes = alphabeta_ordered(board, depth, -Inf, Inf, true, PRUNE_NONE)
+    val, move = minimax(board, depth, -Inf, Inf, true; pruning=PRUNE_BASIC)
     duration = time() - start_time
+
+    global tree_enabled = true
+    reset_tree()
+    _, _, _ = minimax_with_tree(board, depth, -Inf, Inf, true, 0, "BENCH"; pruning=PRUNE_BASIC)
+    nodes = length(tree_nodes)
+    global tree_enabled = false
+
     return duration, nodes
 end
 
 function run_pragmatic(board, depth)
     start_time = time()
-    val, move, nodes = alphabeta_ordered(board, depth, -Inf, Inf, true, PRUNE_LOSS_OF_PIECE)
+    val, move = minimax(board, depth, -Inf, Inf, true; pruning=PRUNE_LOSS_OF_PIECE)
     duration = time() - start_time
+
+    global tree_enabled = true
+    reset_tree()
+    _, _, _ = minimax_with_tree(board, depth, -Inf, Inf, true, 0, "BENCH"; pruning=PRUNE_LOSS_OF_PIECE)
+    nodes = length(tree_nodes)
+    global tree_enabled = false
+
     return duration, nodes
 end
 
 function run_lazy(board, depth)
     start_time = time()
-    val, move, nodes = alphabeta_ordered(board, depth, -Inf, Inf, true, PRUNE_RETREAT)
+    val, move = minimax(board, depth, -Inf, Inf, true; pruning=PRUNE_RETREAT)
     duration = time() - start_time
+
+    global tree_enabled = true
+    reset_tree()
+    _, _, _ = minimax_with_tree(board, depth, -Inf, Inf, true, 0, "BENCH"; pruning=PRUNE_RETREAT)
+    nodes = length(tree_nodes)
+    global tree_enabled = false
+
     return duration, nodes
 end
 
 function run_human(board, depth)
     start_time = time()
-    val, move, nodes = alphabeta_ordered(board, depth, -Inf, Inf, true, PRUNE_HUMAN)
+    val, move = minimax(board, depth, -Inf, Inf, true; pruning=PRUNE_HUMAN)
     duration = time() - start_time
+
+    global tree_enabled = true
+    reset_tree()
+    _, _, _ = minimax_with_tree(board, depth, -Inf, Inf, true, 0, "BENCH"; pruning=PRUNE_HUMAN)
+    nodes = length(tree_nodes)
+    global tree_enabled = false
+
     return duration, nodes
 end
 
@@ -255,6 +187,12 @@ function main()
     board = setup_benchmark_board()
     depth = 6
 
+    # 0. WARMUP (JIT Kompilace)
+    println("--- WARMUP (JIT COMPILATION) ---")
+    minimax(board, 4, -Inf, Inf, true; pruning=PRUNE_LOSS_OF_PIECE)
+    println("--- STARTING BENCHMARK ---")
+
+    # 1. Spuštění variant
     println("Running benchmarks for 10,14 vs 1 at depth $depth...")
 
     t_bf, n_bf = run_brute_force(board, depth)
