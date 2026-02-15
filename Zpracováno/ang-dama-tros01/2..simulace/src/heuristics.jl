@@ -692,15 +692,16 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
             dist_wp1_to_red = max(abs(wp1[1] - red_row), abs(wp1[2] - red_col))
             dist_wp2_to_red = max(abs(wp2[1] - red_row), abs(wp2[2] - red_col))
             avg_dist = (dist_wp1_to_red + dist_wp2_to_red) / 2.0
+            kd_local_special = max(abs(wp1[1] - wp2[1]), abs(wp1[2] - wp2[2]))
 
             if config.use_coordination
                 # Optimální koordinace: vzdálenost 2-4
                 #| region: perfect_coordination
-                if king_distance >= 2 && king_distance <= 6
+                if kd_local_special >= 2 && kd_local_special <= 6
                     score += PERFECT_WEIGHTS[:COORD]  # <1>
-                elseif king_distance == 1
+                elseif kd_local_special == 1
                     score += 100.0  # Příliš blízko - méně efektivní
-                elseif king_distance >= 5
+                elseif kd_local_special >= 5
                     score -= 100.0  # Příliš daleko - nekoordinovaní
                 end
 

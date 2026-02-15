@@ -814,6 +814,16 @@ function minimax_with_tree(board::Matrix{Int}, depth::Int, alpha::Float64, beta:
     # Vytvoř uzel pro vizualizaci stromu (skóre se aktualizuje později)
     current_node_id = add_tree_node(board, move_str, 0.0, alpha, beta, is_maximizing, depth, false)
 
+    # Move ordering: seřaď tahy podle heuristiky pro lepší pruning a tiebreaking
+    # Používáme eval_func předanou jako argument
+    scored_moves = [(m, Float64(eval_func(make_move(board, m), config))) for m in moves]
+    if is_maximizing
+        sort!(scored_moves, by=x -> x[2], rev=true)  # Sestupně pro MAX
+    else
+        sort!(scored_moves, by=x -> x[2], rev=false)  # Vzestupně pro MIN
+    end
+    moves = [x[1] for x in scored_moves]
+
     # Beam Search K=2: pro PRUNE_HUMAN ponech jen 2 nejlepší tahy
     if pruning == PRUNE_HUMAN && length(moves) > 2
         moves = moves[1:2]
@@ -1812,4 +1822,18 @@ function minimax_pure(board::Matrix{Int}, depth::Int, is_maximizing::Bool, move_
         end
         return min_eval, best_move
     end
+end
+
+# ==============================================================================
+# Helper for Tree Visualization
+# ==============================================================================
+if isfile(joinpath(@__DIR__, "print_tree_ascii.jl"))
+    include("print_tree_ascii.jl")
+end
+
+# ==============================================================================
+# Helper for Tree Visualization
+# ==============================================================================
+if isfile(joinpath(@__DIR__, "print_tree_ascii.jl"))
+    include("print_tree_ascii.jl")
 end

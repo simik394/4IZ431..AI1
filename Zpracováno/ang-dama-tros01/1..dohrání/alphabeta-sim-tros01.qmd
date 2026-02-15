@@ -68,33 +68,67 @@ Abychom ověřili efektivitu těchto principů, srovnali jsme několik variant p
 
 # ── SROVNÁVACÍ VIZUALIZACE (TEXT) ──────────────────────────────────────
 # Všechny varianty běží na hloubce 6 (zadání).
+# Tento kód dynamicky generuje stromy pro jednotlivé strategie.
 
-include("/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl")
-# Předpokládáme že minimax_with_tree je dostupný v testvaluefunc.jl nebo podobně
-# Pro teď použijeme výsledky z verifikace pokud jsou dostupné, nebo fake data pro ilustraci
-# V reálu bychom zde měli mít kód který to generuje.
+if !isdefined(Main, :minimax_with_tree)
+    include("/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/testvaluefunc.jl")
+end
+
+# Nastavení testovací desky (W@10,14 vs R@1)
+board = zeros(Int, 8, 8)
+p10 = notation_to_position(10); board[p10.r, p10.c] = WHITE_KING
+p14 = notation_to_position(14); board[p14.r, p14.c] = WHITE_KING
+p1 = notation_to_position(1);   board[p1.r, p1.c] = RED_KING
+depth = 6
 
 println("#### 1. Alpha-Beta — základní (PRUNE_BASIC)")
 println()
 println("Standardní Alpha-Beta algoritmus. Větve jsou ořezány (Pruned), pokud alpha >= beta, ale neprovádí se žádné *dodatečné* heuristické ořezávání.")
 println()
-println("**(Celkem prohledáno: 2091 uzlů v hloubce 6)**")
+# Spustit Basic
+global tree_enabled = true; reset_tree()
+_, _, _ = minimax_with_tree(board, depth, -Inf, Inf, true, 0, "ROOT"; pruning=PRUNE_BASIC)
+nodes_basic = count(n -> n.move_str != "[β cut-off]", tree_nodes)
+println("**(Celkem prohledáno: $nodes_basic uzlů v hloubce $depth)**")
+println()
+println("```")
+print_tree_ascii(2) # Zobraz jen první 2 úrovně pro přehlednost (strom je obrovský)
+println("... (zbytek stromu skryt) ...")
+println("```")
+
 
 println()
 println("#### 2. Pragmatic (PRUNE_LOSS_OF_PIECE)")
 println()
 println("Rozšíření o detekci ztráty figury. Pokud tah vede k okamžité ztrátě převahy, je zahozen.")
 println()
-println("**(Celkem prohledáno: 612 uzlů v hloubce 6)**")
+# Spustit Pragmatic
+global tree_enabled = true; reset_tree()
+_, _, _ = minimax_with_tree(board, depth, -Inf, Inf, true, 0, "ROOT"; pruning=PRUNE_LOSS_OF_PIECE)
+nodes_prag = count(n -> n.move_str != "[β cut-off]", tree_nodes)
+println("**(Celkem prohledáno: $nodes_prag uzlů v hloubce $depth)**")
+println()
+println("```")
+print_tree_ascii(3) # Zobraz 3 úrovně
+println("... (zbytek stromu skryt) ...")
+println("```")
 
 println()
 println("#### 3. Human — Beam Search K=2 (PRUNE_HUMAN)")
 println()
 println("Nejpokročilejší varianta simulující lidské uvažování. Prohledává pouze 2 nejslibnější tahy v každém uzlu.")
 println()
-println("**(Celkem prohledáno: 13 uzlů v hloubce 6)**")
+# Spustit Human
+global tree_enabled = true; reset_tree()
+_, _, _ = minimax_with_tree(board, depth, -Inf, Inf, true, 0, "ROOT"; pruning=PRUNE_HUMAN)
+nodes_human = count(n -> n.move_str != "[β cut-off]", tree_nodes)
+println("**(Celkem prohledáno: $nodes_human uzlů v hloubce $depth)**")
 println()
-println("Tato varianta prozkoumá pouze vítěznou sekvenci a její bezprostřední alternativy, což přesně odpovídá mé manuální analýze.")
+println("Tato varianta prozkoumá pouze vítěznou sekvenci a její bezprostřední alternativy.")
+println()
+println("```")
+print_tree_ascii(6) # Zobraz celý strom (je malý)
+println("```")
 ```
 
 > [!TIP]

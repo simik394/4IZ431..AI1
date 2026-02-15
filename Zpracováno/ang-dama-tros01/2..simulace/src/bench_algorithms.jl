@@ -135,7 +135,7 @@ function run_clever(board, depth)
     global tree_enabled = true
     reset_tree()
     _, _, _ = minimax_with_tree(board, depth, -Inf, Inf, true, 0, "BENCH"; pruning=PRUNE_BASIC)
-    nodes = length(tree_nodes)
+    nodes = count(n -> n.move_str != "[β cut-off]", tree_nodes)
     global tree_enabled = false
 
     return duration, nodes
@@ -149,7 +149,7 @@ function run_pragmatic(board, depth)
     global tree_enabled = true
     reset_tree()
     _, _, _ = minimax_with_tree(board, depth, -Inf, Inf, true, 0, "BENCH"; pruning=PRUNE_LOSS_OF_PIECE)
-    nodes = length(tree_nodes)
+    nodes = count(n -> n.move_str != "[β cut-off]", tree_nodes)
     global tree_enabled = false
 
     return duration, nodes
@@ -163,7 +163,7 @@ function run_lazy(board, depth)
     global tree_enabled = true
     reset_tree()
     _, _, _ = minimax_with_tree(board, depth, -Inf, Inf, true, 0, "BENCH"; pruning=PRUNE_RETREAT)
-    nodes = length(tree_nodes)
+    nodes = count(n -> n.move_str != "[β cut-off]", tree_nodes)
     global tree_enabled = false
 
     return duration, nodes
@@ -177,7 +177,7 @@ function run_human(board, depth)
     global tree_enabled = true
     reset_tree()
     _, _, _ = minimax_with_tree(board, depth, -Inf, Inf, true, 0, "BENCH"; pruning=PRUNE_HUMAN)
-    nodes = length(tree_nodes)
+    nodes = count(n -> n.move_str != "[β cut-off]", tree_nodes)
     global tree_enabled = false
 
     return duration, nodes
