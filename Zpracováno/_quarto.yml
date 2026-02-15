@@ -12,10 +12,10 @@ book:
   date: "2026-02-11"
   chapters:
     - index.qmd
-    - part: "Part 1: Pacman Multiagent (Warm-up)"
+    - part: "Pacman Multiagent (Warm-up)"
       chapters:
         - Pacman-multiagent-tros01/Reports/pacman-report-tros01.qmd
-    - part: "Part 2: Anglická Dáma (Main Event)"
+    - part: "Anglická Dáma (Main Event)"
       chapters:
         - ang-dama-tros01/index.qmd
         - ang-dama-tros01/1..dohrání/alphabeta-sim-tros01.qmd
@@ -26,6 +26,8 @@ book:
 
 filters:
   - include-code-files
+
+code-annotations: below
 
 format:
   pdf:

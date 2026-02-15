@@ -22,27 +22,17 @@ Takže s nejvyšší pravděpodobností jsem měl to řešení které jsem potř
 Jako překážku jsem vnímal skutečnost, že abych potvrdil správnost nalezeného řešení musím projít algoritmus. Abych mohl projít algoritmus efektivně bez toho aniž bych musel vyhodnocovat nemalé množstí stavů, předpokládaně opakovaně protože netrefím vhodnou matematizaci svých pozorování na první a nejspíš ani na druhý pokus. Pokud se mi nepovede na první pokus udělat dostatečně dobrou value funkci, budu muset prohledat a vyhodnotit nebo i jen nakreslit mnohem vyšší počet stavů než bylo komfortní dělat ručně. Protože klíčem u alphabeta prořezávání je právě nalezení co nejvyšší hodnoty co nejdříve, což umožní logicky eliminovat ostatní varianty.
 
 
-Tahle práce shrnuje dva hlavní projekty, na kterých jsem si vyzkoušel, jak teorie vypadá, když se potká s realitou (a s autograderem).
+Tahle práce shrnuje dva hlavní projekty, na kterých jsem si vyzkoušel, jak teorie vypadá, když se potká s realitou (a s autograderem). Pro mě to nebyla jen "povinná školní jízda", ale příležitost osahat si nástroje, které mohou hrát roli v inteligentní automatizaci.
 
 ## Co zde najdete?
 
-### 1. Pacman Multiagent (The Warm-up)
-Začátek semestru a taková "povinná jízda". Implementace agentů pro Pacmana v prostředí UC Berkeley. Cílem bylo hlavně pochopit základy a **procitit to se 100% skóre** v autograderu:
-- **Reflex Agent**: Aby to do ničeho nenarazilo.
-- **Minimax**: Aby to nehrálo úplně náhodně.
-- **Alpha-Beta**: Aby to nehrálo *pomalu*.
-- **Expectimax**: Aby to přežilo i proti duchům, co hrají jak po lobotomii (náhodně).
+Práce je rozdělena na dvě logické části, které kopírují postup mého učení v průběhu semestru:
 
-Bylo to fajn na rozjezd, ale ta pravá zábava (a frustrace) přišla až potom.
+### Pacman Multiagent (The Warm-up)
+První kontakt s prohledáváním v prostředí UC Berkeley. Cílem bylo pochopit základy, jako je **Minimax**, **Alpha-Beta** a **Expectimax**, a získat plný počet bodů v autograderu. Byl to sice "rozjezd", ale kritický pro pochopení vlivu hodnotících funkcí v real-time prostředí.
 
-### 2. Anglická Dáma (The Real Deal)
-Tohle už byla jiná liga. Dostali jsme za úkol nejen "nějak" hrát dámu, ale zaměřit se na specifickou koncovku. A to konkrétně situaci, kdy máte dva krále proti jednomu a musíte vyhrát. Zní to jednoduše? Taky jsem si to myslel.
-Zde jdu mnohem víc do hloubky:
-- Jak reprezentovat stav, aby se v tom dalo vyznat.
-- **Ladění heuristik**: Proč "čím blíž, tím líp" prostě nestačí.
-- **Simulace**: Hromada pokusů o to, jak donutit soupeře vlézt do pasti.
-- A taky trochu vizualizace, protože dívat se jen na logy v terminálu je cesta k šílenství.
+### Anglická Dáma (The Real Deal)
+Zde se teorie potkala s opravdovou frustrací. Úkolem bylo vyřešit specifickou koncovku (2 králové proti 1), což vyžadovalo mnohem hlubší ponor do návrhu heuristik, vizualizaci herních stromů a manuální simulaci. Tato část je výrazně detailnější, protože právě zde se ukázala hranice mezi "naprogramovat algoritmus" a "donutit ho vyhrát".
 
-Tato část reportu je mnohem detailnější, protože jsem nad ní strávil násobně víc času a nervů. Ale výsledek snad stojí za to.
 
 

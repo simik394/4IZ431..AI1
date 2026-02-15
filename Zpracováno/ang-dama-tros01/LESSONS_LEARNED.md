@@ -19,4 +19,10 @@
 ## 4. Quarto freeze cache management
 - Empty `_freeze` directory means no cached execution results
 - `freeze: auto` only caches when cells are first executed; clearing the cache forces re-execution
-- When updating heuristic constants, remember to clear freeze to regenerate dependent tables
+
+## 5. Unifying Quarto Projects (2026-02-15)
+- When merging multiple Quarto projects into a single book, root-relative paths for `include-code-files` filter are critical.
+- Sub-projects often use paths relative to their own root, which break when rendered from a higher-level directory.
+- **Solution:** Convert all `include="..."` attributes in `.qmd` files to **absolute paths** to ensure portability across the unified build process.
+- Also ensure that project-level configuration (like `code-annotations`) is synchronized to the root `_quarto.yml`.
+

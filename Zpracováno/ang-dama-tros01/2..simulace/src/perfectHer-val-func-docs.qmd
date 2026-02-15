@@ -69,7 +69,7 @@ Vsechny ukázky kódu níže jsou **embedy** ze souboru `heuristics.jl`.
 Pri zmene zdrojoveho kodu se dokumentace automaticky aktualizuje.
 :::
 
-## PRINCIP 1: Material a 1v1 ochrana
+## Materiál a 1v1 ochrana
 
 Skóre materiálu $S_{mat}$ je vypočteno jako rozdíl ohodnocení kamenů:
 
@@ -78,50 +78,50 @@ $$ S_{mat} = \sum_{w \in W} V(w) - \sum_{r \in R} V(r) $$
 kde hodnota kamene $V(p)$ je definována:
 $$ V(p) = \begin{cases} 100 & \text{pokud } p \text{ je král} \\ 40 & \text{pokud } p \text{ je pěšec} \end{cases} $$
 
-```{.julia include="heuristics.jl" region="perfect_material"}
+```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_material"}
 ```
 1. Bílé kameny (MAX)
 2. Červené kameny (MIN)
 
-```{.julia include="heuristics.jl" region="perfect_1v1"}
+```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_1v1"}
 ```
 1. Penalta za redukci na 1v1 (nežádoucí stav v koncovce)
 
 > **Rozdil od Optimal:** `optimal` pouziva penaltu -2000, `perfect` pouziva hard forbidden -99999.
 
-## PRINCIP 2: Pozice cerveneho
+## Pozice červeného
 
-```{.julia include="heuristics.jl" region="perfect_red_pos"}
+```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_red_pos"}
 ```
 
 > **Klicovy rozdil:** Pozice cerveneho je primo viditelna v hodnote - penalta I bonus.
 
-## PRINCIP 3: Koordinovany utok (Squeeze)
+## Koordinovaný útok (Squeeze)
 
-```{.julia include="heuristics.jl" region="perfect_coordination"}
+```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_coordination"}
 ```
 
 \newpage
 
-## PRINCIP 4: Penalta za zbytecny ustup
+## Penalta za zbytečný ústup
 
-```{.julia include="heuristics.jl" region="perfect_retreat"}
+```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_retreat"}
 ```
 
 > **Toto zamezuje hre na cas** - bily se nemuze utahovat do nekonecna.
 
-## PRINCIP 5: Diagonalni sitova formace (Net)
+## Diagonální síťová formace (Net)
 
 Kracive logika - rozliseni **kotvy** a **operatora**:
 
-```{.julia include="heuristics.jl" region="perfect_net"}
+```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_net"}
 ```
 
 > **Toto je klicova inovace** - jakmile kotva drzi roh, operator MUSI jit diagonalne (14→18), ne k rohu (14→10).
 
 \newpage
 
-## PRINCIP 6: Mobilita soupeře
+## Mobilita soupeře
 
 Čím méně tahů má červený, tím lépe. 0 tahů = výhra.
 
@@ -129,14 +129,14 @@ Mobilita je definována počtem legálních tahů $|M(R)|$ červeného hráče:
 
 $$ S_{mob} = \begin{cases} 10000 & \text{pokud } |M(R)| = 0 \quad (\text{Výhra}) \\ 600 & \text{pokud } |M(R)| = 1 \\ 300 & \text{pokud } |M(R)| = 2 \\ 100 & \text{pokud } |M(R)| = 3 \\ 0 & \text{jinak} \end{cases} $$
 
-```{.julia include="heuristics.jl" region="perfect_mobility"}
+```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_mobility"}
 ```
 1. Bonus za úplné zablokování soupeře (Výhra)
 2. Bonus za omezení na 1 tah
 3. Bonus za omezení na 2 tahy
 4. Bonus za omezení na 3 tahy
 
-## PRINCIP 7: Cornering (Tlak k okrajům)
+## Cornering (Tlak k okrajům)
 
 Tlačení červeného k okrajům desky ("Kontrola hry").
 
@@ -149,13 +149,13 @@ $$ S_{corn} = \sum_{r \in R} (d_{center}(r) \times 40) + B_{edge}(r) $$
 
 kde $B_{edge}(r) = 150$ pokud $r$ leží přímo na okraji desky.
 
-```{.julia include="heuristics.jl" region="perfect_cornering"}
+```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_cornering"}
 ```
 1. Chebyshevova vzdálenost od středu (tlačení k okrajům)
 2. Bonus za dosažení první/poslední řady
 3. Bonus za dosažení krajního sloupce
 
-## PRINCIP 8: Kontextove zavisle rizeni rohu
+## Kontextově závislé řízení rohu
 
 Tento princip řídí spolupráci dvou bílých králů ($w_1, w_2$) při chytání červeného ($r$) do sítě u rohu (pole 1).
 
@@ -165,7 +165,8 @@ $$ w_{anchor} = \arg\min_{w \in \{w_1, w_2\}} d_{Cheb}(w, \text{Corner}_1) $$
 Druhý král je **operátor** ($w_{op}$). Skóre sítě $S_{net}$ je uděleno, pokud operátor drží diagonálu:
 $$ S_{net} = \begin{cases} 1200 & \text{pokud } w_{op} \text{ je na diagonále } \wedge d_{Cheb}(w_{op}, \text{Corner}_1) \ge 3 \\ -800 & \text{pokud } d_{Cheb}(w_{op}, \text{Corner}_1) \le 2 \quad (\text{Crowding}) \end{cases} $$
 
-```{.julia include="heuristics.jl" region="perfect_corner_control"}
+
+```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_corner_control"}
 ```
 1. Nalezení "kotvy" (král nejblíže rohu 5)
 2. Squeeze bonus (operátor na diagonále)
@@ -180,7 +181,7 @@ $$ S_{net} = \begin{cases} 1200 & \text{pokud } w_{op} \text{ je na diagonále }
 
 Kricka optimalizace pro reseni horizon effectu:
 
-```{.julia include="testvaluefunc.jl" region="move_ordering"}
+```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/testvaluefunc.jl" region="move_ordering"}
 ```
 
 **Vyhody:**
@@ -374,8 +375,8 @@ redirect_stdio(stdout=devnull, stderr=devnull) do
             prune = node.is_pruned ? " [PRUNED]" : ""
             println(buf, prefix, "├─ ", node.move_str, " (", player,
                 ") score=", round(node.score, digits=1),
-                " α=", round(node.alpha, digits=1),
-                " β=", round(node.beta, digits=1), prune)
+                " alpha=", round(node.alpha, digits=1),
+                " beta=", round(node.beta, digits=1), prune)
 
             for child_id in node.children
                 if child_id in visible_ids
@@ -398,7 +399,7 @@ redirect_stdio(stdout=devnull, stderr=devnull) do
         global node_counter = 0
 
         strat = Base.invokelatest(PruningStrategy, strat_int)
-        Base.invokelatest(minimax_with_tree, board, depth, -Inf, Inf, true, 0, "Start"; 
+        Base.invokelatest(minimax_with_tree, board, depth, -Inf, Inf, true, 0, "Start";
             pruning=strat, eval_func=perfect_endgame_heuristic)
 
         total = length(tree_nodes)
@@ -702,12 +703,24 @@ Base.invokelatest(minimax_smart_bench, board, 1, true)
 Base.invokelatest(alphabeta_ordered_bench, board, 1, -Inf, Inf, true, 0)
 
 # 1. Měření
-t0 = time(); _, _, n_bf = minimax_smart_bench(board, depth, true); t_bf = time() - t0;
-t0 = time(); _, _, n_smart = minimax_smart_bench(board, depth, true); t_smart = time() - t0;
-t0 = time(); _, _, n_clever = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 0); t_clever = time() - t0;
-t0 = time(); _, _, n_prag = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 1); t_prag = time() - t0;
-t0 = time(); _, _, n_lazy = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 2); t_lazy = time() - t0;
-t0 = time(); _, _, n_human = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 3); t_human = time() - t0;
+t0 = time();
+_, _, n_bf = minimax_smart_bench(board, depth, true);
+t_bf = time() - t0;
+t0 = time();
+_, _, n_smart = minimax_smart_bench(board, depth, true);
+t_smart = time() - t0;
+t0 = time();
+_, _, n_clever = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 0);
+t_clever = time() - t0;
+t0 = time();
+_, _, n_prag = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 1);
+t_prag = time() - t0;
+t0 = time();
+_, _, n_lazy = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 2);
+t_lazy = time() - t0;
+t0 = time();
+_, _, n_human = alphabeta_ordered_bench(board, depth, -Inf, Inf, true, 3);
+t_human = time() - t0;
 
 # OUTPUT
 println("| Algoritmus | Strategie | Ořezávání | 1v1 Term. | Pressure | Beam | Čas (s) | Uzlů |")

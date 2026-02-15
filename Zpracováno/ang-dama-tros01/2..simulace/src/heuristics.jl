@@ -784,7 +784,8 @@ function perfect_endgame_heuristic(board::Matrix{Int}, config::HeuristicConfig=D
                     op_row, op_col = operator
 
                     # Vzdálenost operátora od rohu
-                    op_dist_from_corner = abs(op_row - 1) + abs(op_col - 2)
+                    op_dist_from_corner = abs(op_row - 1) +
+                                          abs(op_col - 2)
 
                     # Bonus za operátora na diagonále pryč od rohu
                     # Pole 18 = (5,4), pole 15 = (4,6), pole 22 = (6,5) atd.

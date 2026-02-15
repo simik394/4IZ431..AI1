@@ -54,7 +54,7 @@ Když se snažili oba dorážet najednou, akorát si překáželi.
 
 Tady rozeberu, jak jsem tyhle myšlenky přetavil do kódu. Každou část heuristiky jsem si musel obhájit, nasimulovat a vyladit.
 
-### 1. Materiál a Bezpečnost (1v1 Protection)
+### Materiál a Bezpečnost (1v1 Protection)
 
 #### Požadavek
 Zabránit za každou cenu výměně, která by vedla k remíze (1 vs 1).
@@ -79,7 +79,7 @@ $$
 ```{.julia include="/home/sim/Obsi/Prods/04-škola/Předměty/mgr3/4IZ431..AI1/Zpracováno/ang-dama-tros01/2..simulace/src/heuristics.jl" region="perfect_1v1" dedent="true"}
 ```
 
-### 2. Pozice a Kontrola (Red Position)
+### Pozice a Kontrola (Red Position)
 
 #### Požadavek
 Donutit soupeře opustit bezpečné "dvojité rohy" (pole 1, 5, 28, 32).
@@ -94,7 +94,7 @@ Donutit soupeře opustit bezpečné "dvojité rohy" (pole 1, 5, 28, 32).
 1. Penalta: Červený v bezpečné zóně (dvojitý roh) — agent ho chce vytlačit.
 2. Bonus: Červený opustil bezpečí — úspěšné vytlačení.
 
-### 3. Koordinace (Coordination & Squeeze)
+### Koordinace (Coordination & Squeeze)
 
 #### Požadavek
 Králové musí spolupracovat. Jeden sám nic nezmůže.
@@ -119,7 +119,7 @@ $$ 2 \le dist(K_1, K_2) \le 4 $$
 1. Bonus za koordinaci králů ve vzdálenosti 2–6 polí.
 2. Squeeze — sevření soupeře, bonus roste s blízkostí.
 
-### 4. Past a Síť (Net Formation)
+### Past a Síť (Net Formation)
 
 #### Požadavek
 Vytvořit formaci, ze které není úniku.
@@ -141,7 +141,7 @@ Síť je definována vektorem mezi Kotvou ($K_A$) a Operátorem ($K_O$).
 1. Net bonus: Operátor na správné diagonále.
 2. Crowding penalta: Operátor příliš blízko rohu.
 
-### 5. Prevence patu a ústupu (Retreat Penalty)
+### Prevence patu a ústupu (Retreat Penalty)
 
 #### Požadavek
 Hra musí konvergovat k cíli. Nesmíme dovolit nekonečné manévrování.

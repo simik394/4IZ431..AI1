@@ -2,12 +2,10 @@
 title: "Úvod"
 ---
 
-Tato sekce by měla sloužit jako takový "hub" pro všechno, co se týká té složitější části semestru - Anglické dámy.
+Tato část představuje hlavní výzvu semestru. Zatímco Pacman byl o implementaci známých algoritmů do připraveného prostředí, u Anglické dámy jsem musel vybudovat celou logiku od základu – od reprezentace stavu až po ladění komplexních heuristik pro koncovou hru.
 
-Zahrnuje to dvě hlavní fáze mého (mírně zoufalého) snažení:
-1. **Manuální dohrání**: Kdy jsem se snažil pochopit, jak sakra donutit mého agenta, aby tu hru vůbec chtěl vyhrát.
-2. **Simulace**: Kde jsem ladil čísla v heuristické funkci tak dlouho, dokud to nezačalo fungovat.
-
-Je to všechno pohromadě v jednom dokumentu, aby se v tom dalo nějak rozumně orientovat.
+Zahrnuje to dvě hlavní fáze:
+1. **Manuální dohrání**: Analýza herního stromu a pochopení vítězné strategie.
+2. **Simulace**: Matematizace pozorování a ladění hodnotící funkce pro autonomní hru.
 
 ![Vizualizace herního stromu (Master Canvas)](1..dohrání/minimaxalphabeta-assignment.png){#fig-assignment width=90%}

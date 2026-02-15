@@ -2,14 +2,13 @@
 title: "Pacman Multiagent"
 ---
 
-## Úvod
-Tato část práce dokumentuje řešení sady úloh **Multi-Agent Pacman**. Cílem bylo naimplementovat agenty schopné efektivního rozhodování v prostředí s protivníky (duchy).
+Tato část dokumentuje řešení sady úloh zaměřených na inteligentní agenty v prostředí Pacmana. Cílem bylo implementovat a otestovat algoritmy prohledávání stavového prostoru v reálném čase.
 
 ::: {.callout-note}
 Všechny implementace splňují požadavky autograderu na **100 %** (plný počet bodů).
 :::
 
-## 1. Reflex Agent
+## Reflex Agent
 Prvním krokem byl návrh reflexivního agenta, který se rozhoduje pouze na základě aktuálního stavu, bez prohledávání do hloubky.
 
 ### Klíčové principy
@@ -17,7 +16,7 @@ Prvním krokem byl návrh reflexivního agenta, který se rozhoduje pouze na zá
 - **Duchové**: Pokud je duch příliš blízko (vzdálenost < 2) a není ve stavu "scared", agent dostává extrémní penalizaci.
 - **Scared Ghosts**: Pokud je duch zranitelný, agent je motivován k jeho snědení (ale s menší prioritou než přežití).
 
-## 2. Minimax
+## Minimax
 Implementace algoritmu Minimax umožňuje agentovi předvídat tahy soupeřů (duchů) za předpokladu, že hrají optimálně (snaží se minimalizovat Pacmanovo skóre).
 
 ### Implementace
@@ -37,7 +36,7 @@ def get_action(state, depth, agent_index):
 1. Pacman hledá tah s nejvyšším ohodnocením.
 2. Duchové hledají tah, který Pacmanovi nejvíce uškodí.
 
-## 3. Alpha-Beta Pruning
+## Alpha-Beta Pruning
 Pro zefektivnění prohledávání byla implementována metoda Alpha-Beta prořezávání. Ta umožňuje ignorovat větve stromu, které nemohou ovlivnit finální rozhodnutí.
 
 - **Alpha**: Nejlepší hodnota, kterou může MAX (Pacman) zaručit.
